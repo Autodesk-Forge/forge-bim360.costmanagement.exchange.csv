@@ -15,54 +15,9 @@
 // DOES NOT WARRANT THAT THE OPERATION OF THE PROGRAM WILL BE
 // UNINTERRUPTED OR ERROR FREE.
 /////////////////////////////////////////////////////////////////////
+'use strict';   
+
 const request = require("request");
-
-///////////////////////////////////////////////////////////////////////
-/// Upload the package to AWS url
-///////////////////////////////////////////////////////////////////////
-// function uploadAppBundleAsync( field, data) {
-
-//     return new Promise(function (resolve, reject) {
-//         let myData = field.formData;
-//         myData.file = data;
-
-//         var options = {
-//             method: 'POST',
-//             url: field.endpointURL,
-//             formData: myData,
-//             headers: {
-//                 'content-type': 'multipart/form-data'
-//             },
-//         };
-//         request(options, function (error, response, body) {
-//             if (error) {
-//                 reject(error);
-//             } else {
-//                 let resp;
-//                 try {
-//                     resp = JSON.parse(body)
-//                 } catch (e) {
-//                     resp = body
-//                 }
-//                 if (response.statusCode >= 400) {
-//                     console.log('error code: ' + response.statusCode + ' response message: ' + response.statusMessage);
-//                     reject({
-//                         statusCode: response.statusCode,
-//                         statusMessage: response.statusMessage
-//                     });
-//                 } else {
-//                     resolve({
-//                         statusCode: response.statusCode,
-//                         headers: response.headers,
-//                         body: resp
-//                     });
-//                 }
-//             }
-//         });
-//     });
-// }
-
-
 
 ///////////////////////////////////////////////////////////////////////
 /// Call the Rest API

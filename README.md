@@ -1,95 +1,107 @@
-# forge.tutorial.viewhubmodels - Nodejs
+# bim360-node.js-cost.exchange
+This repository demonstrates exchange BIM 360 Cost Information between Cost Module and .CSV file.
 
 [![Node.js](https://img.shields.io/badge/Node.js-8.0-blue.svg)](https://nodejs.org/)
 [![npm](https://img.shields.io/badge/npm-4.0-blue.svg)](https://www.npmjs.com/)
-![Platforms](https://img.shields.io/badge/platform-windows%20%7C%20osx%20%7C%20linux-lightgray.svg)
-[![License](http://img.shields.io/:license-mit-blue.svg)](http://opensource.org/licenses/MIT)
-
-[![oAuth2](https://img.shields.io/badge/oAuth2-v1-green.svg)](http://developer.autodesk.com/)
+![Platforms](https://img.shields.io/badge/Web-Windows%20%7C%20MacOS%20%7C%20Linux-lightgray.svg)
 [![Data-Management](https://img.shields.io/badge/Data%20Management-v1-green.svg)](http://developer.autodesk.com/)
-[![OSS](https://img.shields.io/badge/OSS-v2-green.svg)](http://developer.autodesk.com/)
-[![Model-Derivative](https://img.shields.io/badge/Model%20Derivative-v2-green.svg)](http://developer.autodesk.com/)
 
-![Intermediate](https://img.shields.io/badge/Level-Basic-green.svg)
+[![BIM-360](https://img.shields.io/badge/BIM%20360-v1-green.svg)](http://developer.autodesk.com/)
+[![Cost Management](https://img.shields.io/badge/Cost%20Management-v1-green.svg)](http://developer.autodesk.com/)
 
-# Description
+[![MIT](https://img.shields.io/badge/License-MIT-blue.svg)](http://opensource.org/licenses/MIT)
+[![Level](https://img.shields.io/badge/Level-Intermediate-blue.svg)](http://developer.autodesk.com/)
 
-This sample is part of the [Learn Forge](http://learnforge.autodesk.io) tutorials.
+
+## Description
+This sample demonstrates how to exchange all the properties of Budget, Contract, Cost item and Change Order between Cost module and .CSV file using BIM 360 Cost API. The sample includes two tasks:
+1. export BIM 360 Cost properties to an CSV file.
+2. Import BIM 360 Cost properties (same as above) from a locally stored CSV file.
+ 
+The sample supports to display and export 2 types of data, the raw data with Id, and the human readable data with the name. To import properties, please based on the raw data of CSV file.
+
+## Thumbnail
+
+![thumbnail](/thumbnail.png)  
+
+# Demonstration
+[![https://youtu.be/WX_pssJv5f0](http://img.youtube.com/vi/WX_pssJv5f0/0.jpg)](https://www.youtube.com/watch?v=WX_pssJv5f0 "Exchange cost data between BIM360 Cost Module and .CSV file")
+
+
+# Live Demo
+[https://bimcost.herokuapp.com](https://bimcost.herokuapp.com)
+
 
 # Setup
-
 ## Prerequisites
-
-1. **Forge Account**: Learn how to create a Forge Account, activate subscription and create an app at [this tutorial](http://learnforge.autodesk.io/#/account/). 
-2. **Visual Code**: Visual Code (Windows or MacOS).
-3. **JavaScript ES6** syntax for server-side
+1. **BIM 360 Account**: must be Account Admin to add the app integration. [Learn about provisioning](https://forge.autodesk.com/blog/bim-360-docs-provisioning-forge-apps). 
+2. **Forge Account**: Learn how to create a Forge Account, activate subscription and create an app at [this tutorial](http://learnforge.autodesk.io/#/account/). 
+3. **Node.js**: basic knowledge with [**Node.js**](https://nodejs.org/en/).
 4. **JavaScript** basic knowledge with **jQuery**
 
-
-For using this sample, you need an Autodesk developer credentials. Visit the [Forge Developer Portal](https://developer.autodesk.com), sign up for an account, then [create an app](https://developer.autodesk.com/myapps/create). For this new app, use **http://localhost:3000/api/forge/callback/oauth** as Callback URL, although is not used on 2-legged flow. Finally take note of the **Client ID** and **Client Secret**.
-
 ## Running locally
+Clone this project or download it. It's recommended to install [GitHub desktop](https://desktop.github.com/). To clone it via command line, use the following (**Terminal** on MacOSX/Linux, **Git Shell** on Windows):
 
-Install [NodeJS](https://nodejs.org), version 8 or newer.
+    git clone https://github.com/autodesk-forge/bim360-node.js-cost.api
 
-Clone this project or download it (this `nodejs` branch only). It's recommended to install [GitHub desktop](https://desktop.github.com/). To clone it via command line, use the following (**Terminal** on MacOSX/Linux, **Git Shell** on Windows):
+**Visual Sutdio Code** (Windows, MacOS):
 
-    git clone -b nodejs https://github.com/Autodesk-Forge/learn.forge.viewhubmodels.git
+Open the folder, at the bottom-right, select **Yes** and **Restore**. This restores the packages (e.g. Autodesk.Forge) and creates the launch.json file. 
+
+At the `.vscode\launch.json`, find the env vars and add your Forge Client ID, Secret and callback URL. 
+
+The end result should be as shown below:
+
+```json
+"env": { 
+    "FORGE_CLIENT_ID": "your id here",
+    "FORGE_CLIENT_SECRET": "your secret here",
+    "FORGE_CALLBACK_URL": "http://localhost:3000/api/forge/callback/oauth"
+},
+```
 
 To run it, install the required packages, set the enviroment variables with your client ID & secret and finally start it. Via command line, navigate to the folder where this repository was cloned and use the following:
 
-Mac OSX/Linux (Terminal)
+    npm install 
+    node start.js
 
-    npm install
-    export FORGE_CLIENT_ID=<<YOUR CLIENT ID FROM DEVELOPER PORTAL>>
-    export FORGE_CLIENT_SECRET=<<YOUR CLIENT SECRET>>
-    export FORGE_CALLBACK_URL=<<YOUR CALLBACK URL>>
-    npm start
+Open the browser: [http://localhost:3000](http://localhost:3000). And follow the thumbnail.png to play the features.
 
-Windows (use **Node.js command line** from Start menu)
+## Deployment
 
-    npm install
-    set FORGE_CLIENT_ID=<<YOUR CLIENT ID FROM DEVELOPER PORTAL>>
-    set FORGE_CLIENT_SECRET=<<YOUR CLIENT SECRET>>
-    set FORGE_CALLBACK_URL=<<YOUR CALLBACK URL>>
-    npm start
+To deploy this application to Heroku, the **Callback URL** for Forge must use your `.herokuapp.com` address. After clicking on the button below, at the Heroku Create New App page, set your Client ID, Secret and Callback URL for Forge.
 
-Open the browser: [http://localhost:3000](http://localhost:3000).
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/JohnOnSoftware/bim360-node.js-cost.api)
 
-## Packages used
 
-The [Autodesk Forge](https://www.npmjs.com/package/forge-apis) packages is included by default. Some other non-Autodesk packaged are used, including [express](https://www.npmjs.com/package/express) and [multer](https://www.npmjs.com/package/multer) for upload.
+## Demonstrations
+
 
 # Further Reading
-
-Documentation:
-
 - [BIM 360 API](https://developer.autodesk.com/en/docs/bim360/v1/overview/) and [App Provisioning](https://forge.autodesk.com/blog/bim-360-docs-provisioning-forge-apps)
 - [Data Management API](https://developer.autodesk.com/en/docs/data/v2/overview/)
-- [Viewer](https://developer.autodesk.com/en/docs/viewer/v6)
+
+
+Tutorials:
+
+- [View BIM 360 Models](http://learnforge.autodesk.io/#/tutorials/viewhubmodels)
+
+Blogs:
+
+- [Forge Blog](https://forge.autodesk.com/categories/bim-360-api)
+- [Field of View](https://fieldofviewblog.wordpress.com/), a BIM focused blog
 
 ### Tips & Tricks
 
-For local development/testing, consider use [nodemon](https://www.npmjs.com/package/nodemon) package, which auto restart your node application after any modification on your code. To install it, use:
-
-    sudo npm install -g nodemon
-
-Then, instead of **npm run dev**, use the following:
-
-    npm run nodemon
-
-Which executes **nodemon server.js --ignore www/**, where the **--ignore** parameter indicates that the app should not restart if files under **www** folder are modified.
 
 ### Troubleshooting
 
-After installing Github desktop for Windows, on the Git Shell, if you see a ***error setting certificate verify locations*** error, use the following:
-
-    git config --global http.sslverify "false"
-
+1. **Cannot see my BIM 360 projects**: Make sure to provision the Forge App Client ID within the BIM 360 Account, [learn more here](https://forge.autodesk.com/blog/bim-360-docs-provisioning-forge-apps). This requires the Account Admin permission.
+ 
 ## License
 
 This sample is licensed under the terms of the [MIT License](http://opensource.org/licenses/MIT). Please see the [LICENSE](LICENSE) file for full details.
 
 ## Written by
 
-Petr Broz [@petrbroz](https://twitter.com/petrbroz), [Forge Partner Development](http://forge.autodesk.com)
+Zhong Wu [@johnonsoftware](https://twitter.com/johnonsoftware), [Forge Partner Development](http://forge.autodesk.com)

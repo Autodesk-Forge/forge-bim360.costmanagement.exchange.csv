@@ -16,7 +16,7 @@
 // UNINTERRUPTED OR ERROR FREE.
 /////////////////////////////////////////////////////////////////////
 
-const { AuthClientThreeLegged } = require('forge-apis');
+const { AuthClientThreeLegged, AuthClientTwoLegged } = require('forge-apis');
 
 const config = require('../../config');
 
@@ -28,6 +28,11 @@ class OAuth {
     getClient(scopes = config.scopes.internal) {
         const { client_id, client_secret, callback_url } = config.credentials;
         return new AuthClientThreeLegged(client_id, client_secret, callback_url, scopes);
+    }
+
+    get2LeggedClient(scopes = config.scopes.internal_2legged){
+        const { client_id, client_secret } = config.credentials;
+        return new AuthClientTwoLegged(client_id, client_secret, scopes );
     }
 
     isAuthorized() {

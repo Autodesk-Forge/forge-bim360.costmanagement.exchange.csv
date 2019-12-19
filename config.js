@@ -27,7 +27,34 @@ module.exports = {
     scopes: {
         // Required scopes for the server-side application
         internal: ['bucket:create', 'bucket:read', 'data:read', 'data:create', 'data:write'],
+
+        // Required scopes for the server-side BIM360 Account Admin
+        internal_2legged: ['data:read', 'bucket:read', 'bucket:create', 'data:write', 'bucket:delete', 'account:read', 'account:write'],
+
         // Required scope for the client-side viewer
         public: ['viewables:read']
-    }
+    },
+    accountv1:{
+        URL:{
+            COMPANY_URL: "https://developer.api.autodesk.com/hq/v1/accounts/"+process.env.BIM360_ACCOUNT_ID+"/projects/{0}/companies",
+            USER_URL: "https://developer.api.autodesk.com/hq/v1/accounts/"+process.env.BIM360_ACCOUNT_ID+"/users/{0}",
+        }
+      },
+    
+    bim360Cost:{
+        URL:{
+            BUDGETS_URL:        "https://developer.api.autodesk.com/cost/v1/containers/{0}/budgets",
+            BUDGET_URL:        "https://developer.api.autodesk.com/cost/v1/containers/{0}/budgets/{1}",
+
+            CONTRACTS_URL:      "https://developer.api.autodesk.com/cost/v1/containers/{0}/contracts",
+            CONTRACT_URL:       "https://developer.api.autodesk.com/cost/v1/containers/{0}/contracts/{1}",
+            
+            COSTITEMS_URL:      "https://developer.api.autodesk.com/cost/v1/containers/{0}/cost-items",
+            COSTITEM_URL:       "https://developer.api.autodesk.com/cost/v1/containers/{0}/cost-items/{1}",
+            
+            CHANGEORDERS_URL:   "https://developer.api.autodesk.com/cost/v1/containers/{0}/change-orders/{1}",
+            CHANGEORDER_URL:    "https://developer.api.autodesk.com/cost/v1/containers/{0}/change-orders/{1}/{2}",
+        }
+    },
+    
 };
