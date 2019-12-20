@@ -58,7 +58,8 @@ $(document).ready(function () {
           reader.onload = async function (e) {
 
             const projectHref = $('#labelProjectHref').text();
-            if (projectHref === '') {
+            const costContainerId = $('#labelCostContainer').text();
+            if (projectHref === '' || costContainerId === '' ) {
               alert('please select one project!');
               return;
             }
@@ -82,7 +83,8 @@ $(document).ready(function () {
                   if (typeSupported === TypeSupported.CUSTOM_ATTRIBUTE) {
                     const params = keys[j].split(':');
                     try {
-                      await updateCustomAttribute(projectHref, jsonData['id'], params[params.length - 1], cells[j]);
+                      // interesting, it always add '\r' at the end of the string, workaround for now.
+                      await updateCustomAttribute(projectHref, costContainerId, jsonData['id'], params[params.length - 1].split('\r').join(''), cells[j].split('\r').join(''));
                     } catch (err) {
                       console.log('Failed to update custom attribute ' + params[params.length - 2] + ' : ' + cells[j]);
                     }
@@ -92,7 +94,7 @@ $(document).ready(function () {
               // Trigger the Post request
               console.log(jsonData);
               try {
-                await updateRowInfo(projectHref, jsonData);
+                await updateRowInfo2(projectHref, costContainerId, jsonData);
               } catch (err) {
                 console.log(err);
               }
@@ -212,15 +214,38 @@ function isTypeSupported(typeName) {
 }
 
 
-function updateCustomAttribute(projectHref, entityId, attributeId, attributeValue) {
+function updateCustomAttribute(projectHref, costContainerId, entityId, attributeId, attributeValue) {
   let def = $.Deferred();
 
+  let associationType = null;
+  switch (csvInfo.ActiveTab) {
+    case '#budget': {
+      associationType = 'Budget';
+      break;
+    }
+    case '#contract': {
+      associationType = 'Contract';
+      break;
+    }
+    case '#costitem': {
+      associationType = 'CostItem';
+      break;
+    }
+    case '#changeorder': {
+      associationType = 'FormInstance';
+      break;
+    }
+  }
+
   const requestData = {
-    'projectHref': projectHref,
-    'associationId': entityId,
-    'associationType': csvInfo.ActiveTab,
-    'attributeId': attributeId,
-    'attributeValue': attributeValue
+    'projectHref': projectHref,    
+    'costContainerId': costContainerId,
+    'requestData': [{
+      'associationType': associationType,
+      'associationId': entityId,
+      'propertyDefinitionId': attributeId,
+      'value': attributeValue
+    }]
   };
 
   jQuery.post({
@@ -245,17 +270,17 @@ function updateCustomAttribute(projectHref, entityId, attributeId, attributeValu
 
 
 
-function updateRowInfo2(projectHref, costContainerId, requestBody) {
+function updateRowInfo2(projectHref, costContainerId, requestData) {
   let def = $.Deferred();
 
   const requestUrl = '/api/forge/cost/info';
   const order_Type = $('input[name="order_type"]:checked ').val();
 
-  const requestData = {
+  const requestBody = {
     'projectHref': projectHref,
     'costContainerId': costContainerId,
     'costType': csvInfo.ActiveTab,
-    'requestBody': requestBody,
+    'requestData': requestData,
     'orderType': order_Type
   };
 
@@ -265,7 +290,7 @@ function updateRowInfo2(projectHref, costContainerId, requestBody) {
     url: requestUrl,
     contentType: 'application/json',
     dataType: 'json',
-    data: JSON.stringify(requestData),
+    data: JSON.stringify(requestBody),
 
     success: function (res) {
       def.resolve(res);
@@ -282,76 +307,6 @@ function updateRowInfo2(projectHref, costContainerId, requestBody) {
 }
 
 
-
-async function updateRowInfo(projectHref, requestBody) {
-
-  let requestUrl = null;
-  let requetData = {};
-
-  switch (csvInfo.ActiveTab) {
-    case '#budget': {
-      requestUrl = '/api/forge/cost/budget';
-      requetData = {
-        'projectHref': projectHref,
-        'requestBody': requestBody
-      };
-      break;
-    }
-    case '#contract': {
-      requestUrl = '/api/forge/cost/contract';
-      requetData = {
-        'projectHref': projectHref,
-        'requestBody': requestBody
-      };
-      break;
-    }
-    case '#costitem': {
-      requestUrl = '/api/forge/cost/costitem';
-      requetData = {
-        'projectHref': projectHref,
-        'requestBody': requestBody
-      };
-      break;
-    }
-    case '#changeorder': {
-      const order_Type = $('input[name="order_type"]:checked ').val();
-      requestUrl = '/api/forge/cost/changeorder';
-      requetData = {
-        'projectHref': projectHref,
-        'requestBody': requestBody,
-        'orderType': order_Type
-      };
-      break;
-    }
-  }
-  await updateData(requestUrl, requetData);
-
-}
-
-
-
-
-function updateData(requestUrl, requestData) {
-  let def = $.Deferred();
-
-  jQuery.post({
-    url: requestUrl,
-    contentType: 'application/json',
-    dataType: 'json',
-    data: JSON.stringify(requestData),
-
-    success: function (res) {
-      def.resolve(res);
-    },
-
-    error: function (err) {
-      console.log('update data failed:');
-      def.reject(err)
-    }
-  });
-
-  return def.promise();
-}
 
 
 async function refreshBudgets(projectHref, costContainerId, beautify = false) {
@@ -679,7 +634,7 @@ async function removeColumns(tableVals, columnName) {
 }
 
 
-async function updateTableContent(rawId, tableVals, projectHref, containerId) {
+async function updateTableContent(rawId, tableVals, projectHref=null, containerId=null) {
 
   /// get the real data from the Id
   // const idIndex = tableVals[0][rawId];
@@ -711,7 +666,7 @@ async function updateTableContent(rawId, tableVals, projectHref, containerId) {
 
         if (!dataCached) {
           try {
-            const realValue = await getRealContent(rawId, idWithoutSpace, projectHref, containerId);
+            const realValue = await getContentFromId(rawId, idWithoutSpace, projectHref, containerId);
             cachedInfo.DataInfo.push({ Id: idWithoutSpace, Value: realValue })
             textArray.push(realValue);
           }
@@ -731,7 +686,7 @@ async function updateTableContent(rawId, tableVals, projectHref, containerId) {
 
 
 
-function getRealContent(rawId, rawValue, projectHref, costContainerId) {
+function getContentFromId(rawId, rawValue, projectHref=null, costContainerId=null) {
   let def = $.Deferred();
 
   if (rawId == null || rawValue == null) {

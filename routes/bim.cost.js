@@ -58,8 +58,8 @@ const TokenType = {
 router.get('/cost/info',jsonParser, async function (req, res) {
   const containerId = req.query.costContainerId;
   if(!containerId){  
-    console.log('input parameter is not correct.');
-    res.status(400).end('input parameter is not correct.');
+    console.log('cost container id is not provide.');
+    res.status(400).end('cost container id is not provide.');
     return; 
   }  
 
@@ -80,6 +80,11 @@ router.get('/cost/info',jsonParser, async function (req, res) {
     }  
     case 'changeorders':{
       const orderType = req.query.orderType;
+      if(!orderType){  
+        console.log('change order type is not provided');
+        res.status(400).end('change order type is not provided');
+        return; 
+      }  
       costUrl =  config.bim360Cost.URL.CHANGEORDERS_URL.format(containerId, orderType);
       break;
     } 
@@ -98,45 +103,50 @@ router.get('/cost/info',jsonParser, async function (req, res) {
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
-/// get different data of cost type
+/// update cost data
 /////////////////////////////////////////////////////////////////////////////////////////////
 router.post('/cost/info',jsonParser, async function (req, res) {
   const containerId = req.body.costContainerId;
-  if(!containerId){  
-    console.log('input parameter is not correct.');
-    res.status(400).end('input parameter is not correct.');
+  const costType = req.body.costType;
+  const requestData = req.body.requestData;
+  if(!containerId || !costType || !requestData || !requestData.id){  
+    console.log('missing parameters in request body');
+    res.status(400).end('missing parameters in request body');
     return; 
   }  
 
   let costUrl = null;
-  const costType = req.body.costType;
-  const entityId = req.body.data.id;
   switch( costType ){
     case '#budget':{
-      costUrl =  config.bim360Cost.URL.BUDGET_URL.format(containerId, entityId);
+      costUrl =  config.bim360Cost.URL.BUDGET_URL.format(containerId, requestData.id);
       break;
     };
     case '#contract':{
-      costUrl =  config.bim360Cost.URL.CONTRACT_URL.format(containerId, entityId);
+      costUrl =  config.bim360Cost.URL.CONTRACT_URL.format(containerId, requestData.id);
       break;
     }
     case '#costitem':{
-      costUrl =  config.bim360Cost.URL.COSTITEM_URL.format(containerId, entityId);
+      costUrl =  config.bim360Cost.URL.COSTITEM_URL.format(containerId, requestData.id);
       break;
     }  
     case '#changeorder':{
-      const orderType = req.query.orderType;
-      costUrl =  config.bim360Cost.URL.CHANGEORDER_URL.format(containerId, orderType, entityId);
+      const orderType = req.body.orderType;
+      if(!orderType){  
+        console.log('change order type is not provided');
+        res.status(400).end('change order type is not provided in request body');
+        return; 
+      }  
+      costUrl =  config.bim360Cost.URL.CHANGEORDER_URL.format(containerId, orderType, requestData.id);
       break;
     } 
   };
    try{
     const oauth = new OAuth(req.session);
     const internalToken = await oauth.getInternalToken();
-    const costInfoRes = await apiClientCallAsync( 'PATCH',  costUrl, internalToken.access_token, );
+    const costInfoRes = await apiClientCallAsync( 'PATCH',  costUrl, internalToken.access_token, req.body.requestData );
     res.status(200).end(JSON.stringify(costInfoRes.body.results));
    }catch( err ){
-    console.log('get exception while getting ' + costType + '. Error message is: ' + err.statusMessage )
+    console.log('get exception while updating ' + costType + '. Error message is: ' + err.statusMessage )
     res.status(500).end(err.statusMessage);  
    }
 })
@@ -147,7 +157,8 @@ router.post('/cost/info',jsonParser, async function (req, res) {
 /////////////////////////////////////////////////////////////////////////////////////////////
 router.get('/bim360/v1/type/:typeId/id/:valueId', jsonParser, async function(req, res){
   const typeId = req.params.typeId;
-  const valueId = req.params.valueId.split(' ').join('');
+  const valueId = req.params.valueId;
+  // const valueId = req.params.valueId.split(' ').join('');
 
   let requestUrl = null;
 
@@ -235,426 +246,25 @@ router.get('/bim360/v1/type/:typeId/id/:valueId', jsonParser, async function(req
 /// update the custom attributes
 /////////////////////////////////////////////////////////////////////////////////////////////
 router.post('/cost/attribute',jsonParser, async function (req, res) {
-  
-  var userSession = new UserSession(req.session);
-  if (!userSession.isAuthorized()) {
-    res.status(401).end('Please login first');
+  const containerId = req.body.costContainerId;
+  const requestData = req.body.requestData;
+  if(!containerId || !requestData){  
+    console.log('containerId or requestData is not provided.');
+    res.status(400).end('containerId or requestData is not provided in request body.');
     return; 
   }  
-  var params      = req.body.projectHref.split('/');
-  var projectId   = params[params.length - 1];
-  var containerId = bimDatabase.getCostContainerId(projectId) 
-
-  if(!containerId){  
-      console.log('failed to find ContainerId');
-      res.status(500).end();
-      return; 
-  }  
-  let associationType = null;
-  switch (req.body.associationType) {
-    case '#budget': {
-      associationType = 'Budget';
-      break;
-    }
-    case '#contract': {
-      associationType = 'Contract';
-      break;
-    }
-    case '#costitem': {
-      associationType = 'CostItem';
-      break;
-    }
-    case '#changeorder': {
-      associationType = 'FormInstance';
-      break;
-    }
-  }
-
-  var input = {
-    credentials:userSession.getUserServerCredentials(),  
-    containerId:containerId,
-    qs:{
-      associationId: req.body.associationId,
-      associationType: associationType
-    },
-    data:[{
-      // interesting, it always add '\r' at the end of the string, workaround for now.
-      propertyDefinitionId: req.body.attributeId.split('\r').join(''),
-      value: req.body.attributeValue.split('\r').join('')
-    }]
-   };   
+  const costUrl = config.bim360Cost.URL.CUSTOM_ATTRIBUTE_URL.format(containerId);
 
   try {
-    var response = await costWrite.updateCustomAttribute(input);
-    if (response === null) {
-      console.log('Failed to update custom attribute: '+ req.body.attributeId + ' : ' + req.body.attributeValue)
-      res.status(500).end("Failed to update custom attribute");
-    }
-    res.status(200).json(JSON.stringify(response));
+    const oauth = new OAuth(req.session);
+    const internalToken = await oauth.getInternalToken();
+    const costInfoRes = await apiClientCallAsync('POST', costUrl, internalToken.access_token, requestData);
+    res.status(200).end(JSON.stringify(costInfoRes.body));
   } catch (err) {
-    console.log('get exception while updating custom attribute: '+ req.body.attributeId + ' : ' + req.body.attributeValue)
+    console.log('get exception while updating, error message is: ' + err.statusMessage)
     res.status(500).end(err.statusMessage);
   }
 })
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-/// get budget properties 
-/////////////////////////////////////////////////////////////////////////////////////////////
-// router.get('/cost/budgets',jsonParser, async function (req, res) {
-  
-//   var params = req.query.projectHref.split('/');
-//   var projectId = params[params.length - 1];
-//   var containerId = bimDatabase.getCostContainerId(projectId) 
-
-//   if(!containerId){  
-//       console.log('failed to find ContainerId');
-//       res.status(500).end();
-//       return; 
-//   }  
-
-//   // Get the access token
-//   const oauth = new OAuth(req.session);
-//   const internalToken = await oauth.getInternalToken();
-  
-
-
-//    try{
-
-//     const oauth = new OAuth(req.session);
-//     const internalToken = await oauth.getInternalToken();
-
-//     const budgetsUrl =  bim360Cost.URL.BUDGETS_RUL.format('de605561-7ad8-11e8-9d12-afb30ac3c34f');
-
-//     const budgetsRes = await apiClientCallAsync( 'GET',  budgetsUrl, internalToken.access_token);
-//     res.status(200).end(JSON.stringify(budgetsRes.body.results));
-
-//    }catch( err ){
-//     console.log('get exception while fetching budgets')
-//     res.status(500).end(err.statusMessage);  
-//    }
-// })
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-/// update budget properties
-/////////////////////////////////////////////////////////////////////////////////////////////
-router.post('/cost/budget',jsonParser, async function (req, res) {
-  
-  var userSession = new UserSession(req.session);
-  if (!userSession.isAuthorized()) {
-    res.status(401).end('Please login first');
-    return; 
-  }  
-  var requestBody = req.body.requestBody;
-  var params      = req.body.projectHref.split('/');
-  var projectId = params[params.length - 1];
-  var containerId = bimDatabase.getCostContainerId(projectId) 
-
-  if(!containerId){  
-      console.log('failed to find ContainerId');
-      res.status(500).end();
-      return; 
-  }  
-
-  var input = {
-    credentials:userSession.getUserServerCredentials(),  
-    containerId:containerId,
-    data:requestBody
-   };   
-
-   try{
-    var response = await costWrite.updateBudget(input );
-    if(response === null){
-      console.log('Failed to update budget.')
-      res.status(500).end("Failed to update budget.");  
-    }
-    res.status(200).json(JSON.stringify(response.body.results)); 
-   }catch( err ){
-    console.log('get exception while updating budget item')
-    res.status(500).end(err.statusMessage);  
-   }
-})
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-/// get contract properties 
-/////////////////////////////////////////////////////////////////////////////////////////////
-// router.get('/cost/contracts',jsonParser, async function (req, res) {
-  
-//   var userSession = new UserSession(req.session);
-//   if (!userSession.isAuthorized()) {
-//     res.status(401).end('Please login first');
-//     return; 
-//   }  
-//   var params = req.query.projectHref.split('/');
-//   var projectId = params[params.length - 1];
-//   var containerId = bimDatabase.getCostContainerId(projectId) 
-//   console.log("project id:" + projectId);
-//   console.log("cost container id:" + containerId);
-
-//   if(!containerId){  
-//       console.log('failed to find ContainerId');
-//       res.status(500).end();
-//       return; 
-//   }  
-
-//   var input = {
-//     credentials:userSession.getUserServerCredentials(),  
-//     containerId:containerId
-//    };   
-
-//    try{
-//     var response = await costRead.getContracts(input );
-//     console.log(response)
-//     res.status(200).json(JSON.stringify(response.body.results)); 
-//    }catch( err ){
-//     console.log('get exception while fetching budgets')
-//     res.status(500).end(err.statusMessage);  
-//    }
-// })
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-/// update the contract properties
-/////////////////////////////////////////////////////////////////////////////////////////////
-router.post('/cost/contract',jsonParser, async function (req, res) {
-  
-  var userSession = new UserSession(req.session);
-  if (!userSession.isAuthorized()) {
-    res.status(401).end('Please login first');
-    return; 
-  }  
-  var requestBody = req.body.requestBody;
-  var params      = req.body.projectHref.split('/');
-  var projectId = params[params.length - 1];
-  var containerId = bimDatabase.getCostContainerId(projectId) 
-
-  if(!containerId){  
-      console.log('failed to find ContainerId');
-      res.status(500).end();
-      return; 
-  }  
-
-  var input = {
-    credentials:userSession.getUserServerCredentials(),  
-    containerId:containerId,
-    data:requestBody
-   };   
-
-   try{
-    var response = await costWrite.updateContract(input );
-    if(response === null){
-      console.log('Failed to update contract.')
-      res.status(500).end("Failed to update contract.");  
-    }
-    res.status(200).json(JSON.stringify(response.body.results)); 
-   }catch( err ){
-    console.log('get exception while updating contract: '+ input.requestBody.name)
-    res.status(500).end(err.statusMessage);  
-   }
-})
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-/// get cost item properties
-/////////////////////////////////////////////////////////////////////////////////////////////
-// router.get('/cost/costitem',jsonParser, async function (req, res) {
-  
-//   var userSession = new UserSession(req.session);
-//   if (!userSession.isAuthorized()) {
-//     res.status(401).end('Please login first');
-//     return; 
-//   }  
-//   var params = req.query.projectHref.split('/');
-//   var projectId = params[params.length - 1];
-//   var containerId = bimDatabase.getCostContainerId(projectId) 
-//   console.log("project id:" + projectId);
-//   console.log("cost container id:" + containerId);
-
-//   if(!containerId){  
-//       console.log('failed to find ContainerId');
-//       res.status(500).end();
-//       return; 
-//   }  
-
-//   var input = {
-//     credentials:userSession.getUserServerCredentials(),  
-//     containerId:containerId
-//    };
-   
-//    console.log(input);
-
-//    try{
-//     var response = await costRead.getCostItems(input );
-//     console.log(response)
-//     res.status(200).json(JSON.stringify(response.body.results)); 
-//    }catch( err ){
-//     console.log('get exception while fetching cost items')
-//     res.status(500).end(err.statusMessage);  
-//    }
-// })
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-/// update the cost item properties
-/////////////////////////////////////////////////////////////////////////////////////////////
-router.post('/cost/costitem',jsonParser, async function (req, res) {
-  
-  var userSession = new UserSession(req.session);
-  if (!userSession.isAuthorized()) {
-    res.status(401).end('Please login first');
-    return; 
-  }  
-  var requestBody = req.body.requestBody;
-  var params      = req.body.projectHref.split('/');
-  var projectId = params[params.length - 1];
-  var containerId = bimDatabase.getCostContainerId(projectId) 
-
-  if(!containerId){  
-      console.log('failed to find ContainerId');
-      res.status(500).end();
-      return; 
-  }  
-
-  var input = {
-    credentials:userSession.getUserServerCredentials(),  
-    containerId:containerId,
-    data:requestBody
-   };   
-
-   try{
-    var response = await costWrite.updateCostItem(input );
-    if(response === null){
-      console.log('Failed to update cost item.')
-      res.status(500).end("Failed to update cost item.");  
-    }
-    res.status(200).json(JSON.stringify(response.body.results)); 
-   }catch( err ){
-    console.log('get exception while updating contract.')
-    res.status(500).end(err.statusMessage);  
-   }
-})
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-/// get change orders 
-/////////////////////////////////////////////////////////////////////////////////////////////
-// router.get('/cost/changeorder',jsonParser, async function (req, res) {
-//   var userSession = new UserSession(req.session);
-//   if (!userSession.isAuthorized()) {
-//     console.log('failed to get access token');
-//     res.status(401).end('Please login first');
-//     return;
-//   }  
-//   var params = req.query.projectHref.split('/');
-//   var projectId = params[params.length - 1];
-//   var containerId = bimDatabase.getCostContainerId(projectId);
-//   var orderType = req.query.orderType; 
-//   if(!containerId){  
-//       console.log('failed to find ContainerId');
-//       res.status(500).end();
-//       return; 
-//   }  
-
-//   var input = {
-//     credentials:userSession.getUserServerCredentials(),  
-//     containerId:containerId,
-//     orderType:orderType
-//    };   
-
-//    try{
-//     var response = await costRead.getChangeOrders(input );
-//     res.status(200).json(JSON.stringify(response.body.results)); 
-//    }catch( err ){
-//     console.log('get exception while fetching budgets')
-//     res.status(500).end(err.statusMessage);  
-//    }
-//    return;
-// })
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-/// update the properties of change order
-/////////////////////////////////////////////////////////////////////////////////////////////
-router.post('/cost/changeorder',jsonParser, async function (req, res) {
-  
-  var userSession = new UserSession(req.session);
-  if (!userSession.isAuthorized()) {
-    res.status(401).end('Please login first');
-    return; 
-  }  
-  var requestBody = req.body.requestBody;
-  var params      = req.body.projectHref.split('/');
-  var orderType   = req.body.orderType; 
-  var projectId = params[params.length - 1];
-  var containerId = bimDatabase.getCostContainerId(projectId) 
-
-  if(!containerId){  
-      console.log('failed to find ContainerId');
-      res.status(500).end();
-      return; 
-  }  
-
-  var input = {
-    credentials:userSession.getUserServerCredentials(),  
-    containerId:containerId,
-    orderType:orderType,
-    data:requestBody
-   };   
-
-   try{
-    var response = await costWrite.updateChangeOrder(input );
-    if(response === null){
-      console.log('Failed to update change order.')
-      res.status(500).end("Failed to update change order.");  
-    }
-    res.status(200).json(JSON.stringify(response.body.results)); 
-   }catch( err ){
-    console.log('get exception while updating contract.')
-    res.status(500).end(err.statusMessage);  
-   }
-})
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-/// get status 
-/////////////////////////////////////////////////////////////////////////////////////////////
-// router.get('/cost/statuses',jsonParser, async function (req, res) {
-  
-//   if( costStatuses !== null ){
-//     res.status(200).json(JSON.stringify(costStatuses)); 
-//     return;
-//   }
-//   var userSession = new UserSession(req.session);
-//   if (!userSession.isAuthorized()) {
-//     res.status(401).end('Please login first');
-//     return; 
-//   }  
-//   var params = req.query.projectHref.split('/');
-//   var projectId = params[params.length - 1];
-//   var containerId = bimDatabase.getCostContainerId(projectId);
-//   console.log("project id:" + projectId);
-//   console.log("cost container id:" + containerId);
-
-//   if(!containerId){  
-//       console.log('failed to find ContainerId');
-//       res.status(500).end();
-//       return; 
-//   }  
-
-//   var input = {
-//     credentials:userSession.getUserServerCredentials(),  
-//     containerId:containerId
-//    };   
-
-//    console.log(input);
-
-//    try{
-//     var response = await costRead.getCostStatuses(input );
-//     console.log(response)
-//     costStatuses = response.body;
-//     res.status(200).json(JSON.stringify(costStatuses)); 
-//    }catch( err ){
-//     console.log('get exception while fetching budgets')
-//     res.status(500).end(err.statusMessage);  
-//    }
-// })
-
 
 
 module.exports = router
