@@ -26,6 +26,7 @@ if (!String.prototype.replaceAll) {
 }
 
 
+var costTable = null
 $(document).ready(function () {
 
   // Trigger the message for import operation
@@ -43,11 +44,11 @@ $(document).ready(function () {
     exporting = $('input[name="exportOrImport"]:checked').val() === 'export';
     // Export the current table
     if (exporting) {
-      if (csvInfo.Data === null) {
+      if( !costTable || !costTable.csvData ){
         alert('Please get the data first.')
         return;
       }
-      exportCSV(csvInfo);
+      costTable.exportCSV();
     } else {
       // Import data from selected CSV file
       var fileUpload = document.getElementById("inputFile");
@@ -94,7 +95,7 @@ $(document).ready(function () {
               // Trigger the Post request
               console.log(jsonData);
               try {
-                await updateRowInfo2(projectHref, costContainerId, jsonData);
+                await updateRowInfo(projectHref, costContainerId, jsonData);
               } catch (err) {
                 console.log(err);
               }
@@ -116,46 +117,49 @@ $(document).ready(function () {
   $('#btnRefresh').click(async () => {
     const projectHref = $('#labelProjectHref').text();
     const costContainerId = $('#labelCostContainer').text();
-    if (projectHref === '') {
+    if (projectHref === '' || costContainerId === '') {
       alert('please select one project!');
       return;
     }
 
-    const displayStyle = $('input[name="dataTypeToDisplay"]:checked').val() === 'beautifulData';
-
     $('#loader_stats').css({ display: "block" });
-    switch (csvInfo.ActiveTab) {
-      case '#budget': {
-        await refreshBudgets(projectHref, costContainerId, displayStyle);
-        break;
-      }
-      case '#contract': {
-        await refreshContracts(projectHref,costContainerId, displayStyle);
-        break;
-      }
-      case '#costitem': {
-        await refreshCostitems(projectHref, costContainerId, displayStyle);
-        break;
-      }
-      case '#changeorder': {
-        await refreshChangeOrders(projectHref, costContainerId, displayStyle);
-        break;
-      }
-    }
+
+    costTable.Sytle = $('input[name="dataTypeToDisplay"]:checked').val() === 'beautifulData';
+    await costTable.fetchDataOfCurrentDataTypeAsync();
+    await costTable.polishDataOfCurrentDataTypeAsync();
+    costTable.refreshTable();
+
     $('#loader_stats').css({ display: "none" });
   })
 
-  $("input[name='order_type']").click(function () {
+  $("input[name='order_type']").click(function ( e ) {
+    costTable.CurrentDataType = e.target.value;    
     $('#btnRefresh').click();
   })
 
   $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
     var activeTab = e.target.hash;
-    csvInfo.ActiveTab = activeTab;
+    switch( activeTab ){
+      case '#budget':{
+        costTable.CurrentDataType = CostDataType.BUDGET;
+        break;
+      }
+      case '#contract':{
+        costTable.CurrentDataType = CostDataType.CONTRACT;
+        break;
+      }
+      case '#costitem':{
+        costTable.CurrentDataType = CostDataType.COST_ITEM;
+        break;
+      }
+      case '#changeorder':{
+        costTable.CurrentDataType = $('input[name="order_type"]:checked ').val();
+        break;
+      }
+    }
     $('#btnRefresh').click();
   });
 });
-
 
 
 
@@ -192,6 +196,147 @@ var csvInfo = {
 var cachedInfo = {
   DataInfo: []
 }
+
+
+const CostDataType = {
+  BUDGET   : 'budget',
+  CONTRACT : 'contract',
+  COST_ITEM: 'costitem',
+  PCO : 'pco',
+  RFQ : 'rfq',
+  RCO : 'rco',
+  OCO : 'oco',
+  SCO : 'sco'
+}
+
+
+const DataStyle = {
+
+
+}
+
+///////////////////////////////////////////////////////////////////////////
+class CostTable{
+
+  constructor( tableId, costContainerId, projectHref, currentDataType = CostDataType.BUDGET, dataSet=[] ) {
+    this.tableId = tableId;
+    this.costContainerId = costContainerId;
+    this.projectHref     = projectHref;
+    this.dataSet = dataSet;
+    this.currentDataType = currentDataType;
+    this.resultSytle = false;
+    this.csvData = null;
+  };
+
+
+  async fetchDataOfCurrentDataTypeAsync(){
+
+    const requestUrl = '/api/forge/cost/info';
+    const requetData = {
+      'costContainerId': this.costContainerId,
+      'costType': this.currentDataType
+    };
+  
+    this.dataSet = await getDataAsync(requestUrl, requetData);
+  };
+
+  async polishDataOfCurrentDataTypeAsync(){
+
+    this.dataSet = await extendCustomAttr(this.dataSet );
+    this.dataSet = await removeNonsenseColumns(this.dataSet);
+    if (this.resultSytle) {
+      this.dataSet = beautifyTitles(this.dataSet);
+      this.dataSet = await beautifyData(this.dataSet, this.projectHref);
+      this.dataSet = await beautifyColumns(this.dataSet);
+    }
+    this.csvData = await prepareCSVData(this.dataSet);
+  };
+
+  // raw data or human readable data
+  set Sytle( style = fasle ){
+    this.resultSytle = style;
+  };
+
+  // current cost data type
+  set CurrentDataType( dataType = CostDataType.BUDGET ){
+    this.currentDataType = dataType;
+    switch( this.currentDataType ){
+      case CostDataType.BUDGET:{
+        this.tableId = '#budgetsTable';
+        break;
+      }
+      case CostDataType.CONTRACT:{
+        this.tableId = '#contractsTable';
+        break;
+      }
+      case CostDataType.COST_ITEM:{
+        this.tableId = '#costItemsTable';
+        break;
+      }
+      case CostDataType.PCO:
+      case CostDataType.RFQ:
+      case CostDataType.RCO:
+      case CostDataType.OCO:
+      case CostDataType.SCO: {
+        this.tableId = '#changeOrderTable';
+        break;
+      }
+    }
+  };
+
+  // current table id
+  set CurrentTableId( newTableId ) {
+    this.tableId = newTableId;
+  };
+
+  refreshTable(){
+    let columns = [];
+    for (var key in this.dataSet[0]) {
+      columns.push({
+        field: key,
+        title: key,
+        align: "center"
+      })
+    }
+  
+    $(this.tableId).bootstrapTable('destroy');
+  
+    $(this.tableId).bootstrapTable({
+      data: this.dataSet,
+      editable: true,
+      clickToSelect: true,
+      cache: false,
+      showToggle: false,
+      showPaginationSwitch: true,
+      pagination: true,
+      pageList: [10, 25, 50, 100],
+      pageSize: 15,
+      pageNumber: 1,
+      uniqueId: 'id',
+      striped: true,
+      search: true,
+      showRefresh: true,
+      minimumCountColumns: 2,
+      smartDisplay: true,
+      columns: columns
+    });  
+  };
+
+
+  exportCSV(){
+    var csvString = this.csvData.join("%0A");
+    var a = document.createElement('a');
+    a.href = 'data:attachment/csv,' + csvString;
+    a.target = '_blank';
+    a.download = this.currentDataType + '.csv';
+    document.body.appendChild(a);
+    a.click();
+  }
+
+}
+
+
+
 
 function isTypeSupported(typeName) {
 
@@ -270,7 +415,7 @@ function updateCustomAttribute(projectHref, costContainerId, entityId, attribute
 
 
 
-function updateRowInfo2(projectHref, costContainerId, requestData) {
+function updateRowInfo(projectHref, costContainerId, requestData) {
   let def = $.Deferred();
 
   const requestUrl = '/api/forge/cost/info';
@@ -309,133 +454,133 @@ function updateRowInfo2(projectHref, costContainerId, requestData) {
 
 
 
-async function refreshBudgets(projectHref, costContainerId, beautify = false) {
-  csvInfo.Data = null;
-  try {
-    const budgets = await refreshBudgetDashboard(projectHref, costContainerId, true);
-    // var budgets = JSON.parse(res);
-    let resultData = await extendCustomAttr(budgets, projectHref);
-    resultData = await removeNonsenseColumns(resultData);
-    if (beautify) {
-      resultData = beautifyTitles(resultData);
-      resultData = await beautifyData(resultData, projectHref,costContainerId);
-      resultData = await beautifyColumns(resultData);
-    }
-    await createTable("#budgetsTable", resultData, projectHref);
-    csvInfo.Data = await prepareCSVData(resultData);
-    csvInfo.FileName = 'BudgetInfo';
-  } catch (err) {
-    console.log(err);
-  }
-};
+// async function refreshBudgets(projectHref, costContainerId, beautify = false) {
+//   csvInfo.Data = null;
+//   try {
+//     const budgets = await refreshBudgetDashboard(projectHref, costContainerId, true);
+//     // var budgets = JSON.parse(res);
+//     let resultData = await extendCustomAttr(budgets, projectHref);
+//     resultData = await removeNonsenseColumns(resultData);
+//     if (beautify) {
+//       resultData = beautifyTitles(resultData);
+//       resultData = await beautifyData(resultData, projectHref,costContainerId);
+//       resultData = await beautifyColumns(resultData);
+//     }
+//     await createTable("#budgetsTable", resultData, projectHref);
+//     csvInfo.Data = await prepareCSVData(resultData);
+//     csvInfo.FileName = 'BudgetInfo';
+//   } catch (err) {
+//     console.log(err);
+//   }
+// };
 
 
-async function refreshContracts(projectHref, costContainerId, beautify = false) {
-  csvInfo.Data = null;
-  try {
-    const contracts = await refreshContractDashboard(projectHref, costContainerId, true);
-    // var contracts = JSON.parse(res);
-    let resultData = await extendCustomAttr(contracts, projectHref);
-    resultData = await removeNonsenseColumns(resultData);
-    if (beautify) {
-      resultData = beautifyTitles(resultData);
-      resultData = await beautifyData(resultData, projectHref);
-      resultData = await beautifyColumns(resultData);
-    }
-    await createTable("#contractsTable", resultData, projectHref);
-    csvInfo.Data = await prepareCSVData(resultData);
-    csvInfo.FileName = 'ContractInfo';
-  } catch (err) {
-    console.log(err);
-  }
-};
+// async function refreshContracts(projectHref, costContainerId, beautify = false) {
+//   csvInfo.Data = null;
+//   try {
+//     const contracts = await refreshContractDashboard(projectHref, costContainerId, true);
+//     // var contracts = JSON.parse(res);
+//     let resultData = await extendCustomAttr(contracts, projectHref);
+//     resultData = await removeNonsenseColumns(resultData);
+//     if (beautify) {
+//       resultData = beautifyTitles(resultData);
+//       resultData = await beautifyData(resultData, projectHref);
+//       resultData = await beautifyColumns(resultData);
+//     }
+//     await createTable("#contractsTable", resultData, projectHref);
+//     csvInfo.Data = await prepareCSVData(resultData);
+//     csvInfo.FileName = 'ContractInfo';
+//   } catch (err) {
+//     console.log(err);
+//   }
+// };
 
 
-async function refreshCostitems(projectHref, costContainerId, beautify = false) {
-  csvInfo.Data = null;
-  try {
-    const costItems = await refreshCostItemDashboard(projectHref, costContainerId, true);
-    // var costItems = JSON.parse(res);
-    let resultData = await extendCustomAttr(costItems, projectHref);
-    resultData = await removeNonsenseColumns(resultData);
-    if (beautify) {
-      resultData = beautifyTitles(resultData);
-      resultData = await beautifyData(resultData, projectHref);
-      resultData = await beautifyColumns(resultData);
-    }
-    await createTable("#costItemsTable", resultData, projectHref);
-    csvInfo.Data = await prepareCSVData(resultData);
-    csvInfo.FileName = 'CostItemInfo';
-  } catch (err) {
-    console.log(err);
-  }
-};
+// async function refreshCostitems(projectHref, costContainerId, beautify = false) {
+//   csvInfo.Data = null;
+//   try {
+//     const costItems = await refreshCostItemDashboard(projectHref, costContainerId, true);
+//     // var costItems = JSON.parse(res);
+//     let resultData = await extendCustomAttr(costItems, projectHref);
+//     resultData = await removeNonsenseColumns(resultData);
+//     if (beautify) {
+//       resultData = beautifyTitles(resultData);
+//       resultData = await beautifyData(resultData, projectHref);
+//       resultData = await beautifyColumns(resultData);
+//     }
+//     await createTable("#costItemsTable", resultData, projectHref);
+//     csvInfo.Data = await prepareCSVData(resultData);
+//     csvInfo.FileName = 'CostItemInfo';
+//   } catch (err) {
+//     console.log(err);
+//   }
+// };
 
 
-async function refreshChangeOrders(projectHref, costContainerId, beautify = false) {
-  csvInfo.Data = null;
-  const order_Type = $('input[name="order_type"]:checked ').val();
-  try {
-    const orders = await refreshChangeOrderDashboard(projectHref, costContainerId, order_Type, true);
-    // var orders = JSON.parse(res);
-    let resultData = await extendCustomAttr(orders, projectHref);
-    resultData = await removeNonsenseColumns(resultData);
-    if (beautify) {
-      resultData = beautifyTitles(resultData);
-      resultData = await beautifyData(resultData, projectHref);
-      resultData = await beautifyColumns(resultData);
-    }
+// async function refreshChangeOrders(projectHref, costContainerId, beautify = false) {
+//   csvInfo.Data = null;
+//   const order_Type = $('input[name="order_type"]:checked ').val();
+//   try {
+//     const orders = await refreshChangeOrderDashboard(projectHref, costContainerId, order_Type, true);
+//     // var orders = JSON.parse(res);
+//     let resultData = await extendCustomAttr(orders, projectHref);
+//     resultData = await removeNonsenseColumns(resultData);
+//     if (beautify) {
+//       resultData = beautifyTitles(resultData);
+//       resultData = await beautifyData(resultData, projectHref);
+//       resultData = await beautifyColumns(resultData);
+//     }
 
-    await createTable("#changeOrderTable", resultData, projectHref);
-    csvInfo.Data = await prepareCSVData(resultData);
-    csvInfo.FileName = 'ChangeOrderInfo_' + order_Type;
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-
-async function createTable(tableId, tableVals, projectHref) {
-
-  // create the head for the table
-  let columns = [];
-  for (var key in tableVals[0]) {
-    columns.push({
-      field: key,
-      title: key,
-      align: "center"
-    })
-  }
-
-  $(tableId).bootstrapTable('destroy');
-
-  $(tableId).bootstrapTable({
-    data: tableVals,
-    editable: true,
-    clickToSelect: true,
-    cache: false,
-    showToggle: false,
-    showPaginationSwitch: true,
-    pagination: true,
-    pageList: [10, 25, 50, 100],
-    pageSize: 15,
-    pageNumber: 1,
-    uniqueId: 'id',
-    striped: true,
-    search: true,
-    showRefresh: true,
-    minimumCountColumns: 2,
-    smartDisplay: true,
-    columns: columns
-  });
-};
+//     await createTable("#changeOrderTable", resultData, projectHref);
+//     csvInfo.Data = await prepareCSVData(resultData);
+//     csvInfo.FileName = 'ChangeOrderInfo_' + order_Type;
+//   } catch (err) {
+//     console.log(err);
+//   }
+// };
 
 
+// async function createTable(tableId, tableVals, projectHref) {
 
+//   // create the head for the table
+//   let columns = [];
+//   for (var key in tableVals[0]) {
+//     columns.push({
+//       field: key,
+//       title: key,
+//       align: "center"
+//     })
+//   }
+
+//   $(tableId).bootstrapTable('destroy');
+
+//   $(tableId).bootstrapTable({
+//     data: tableVals,
+//     editable: true,
+//     clickToSelect: true,
+//     cache: false,
+//     showToggle: false,
+//     showPaginationSwitch: true,
+//     pagination: true,
+//     pageList: [10, 25, 50, 100],
+//     pageSize: 15,
+//     pageNumber: 1,
+//     uniqueId: 'id',
+//     striped: true,
+//     search: true,
+//     showRefresh: true,
+//     minimumCountColumns: 2,
+//     smartDisplay: true,
+//     columns: columns
+//   });
+// };
 
 
 
-async function extendCustomAttr(tableVals, projectHref ) {
+
+
+
+async function extendCustomAttr(tableVals ) {
   for (var key in tableVals[0]) {
     if (Array.isArray(tableVals[0][key])) {
       tableVals.forEach((rowData, index) => {
@@ -686,37 +831,61 @@ async function updateTableContent(rawId, tableVals, projectHref=null, containerI
 
 
 
-function getContentFromId(rawId, rawValue, projectHref=null, costContainerId=null) {
-  let def = $.Deferred();
-
+async function getContentFromId(rawId, rawValue, projectHref=null, costContainerId=null) {
+ 
   if (rawId == null || rawValue == null) {
-    console.log('input is not valid.');
-    def.reject('input is not valid.');
-    return def.promise();
+    console.log('input parameters is not valid.');
+    return;
   }
 
-  jQuery.get({
-    url: '/api/forge/bim360/v1/type/' + encodeURIComponent(rawId) + '/id/' + encodeURIComponent(rawValue),
-    dataType: 'json',
-    data: {
-      'projectHref': projectHref,
-      'costContainerId': costContainerId
-    },
-    success: function (res) {
-      def.resolve(JSON.parse(res).name);
-    },
-    error: function (err) {
-      def.reject(err);
-    }
-  });
+  const requestUrl = '/api/forge/bim360/v1/type/' + encodeURIComponent(rawId) + '/id/' + encodeURIComponent(rawValue);
 
-  return def.promise();
+  const requestData= {
+    'projectHref': projectHref,
+    'costContainerId': costContainerId
+  };
+
+  const res= await getDataAsync(requestUrl, requestData);
+  return JSON.parse(res).name;
+
+
+
+
+
+  // let def = $.Deferred();
+
+  // if (rawId == null || rawValue == null) {
+  //   console.log('input is not valid.');
+  //   def.reject('input is not valid.');
+  //   return def.promise();
+  // }
+
+  // jQuery.get({
+  //   url: '/api/forge/bim360/v1/type/' + encodeURIComponent(rawId) + '/id/' + encodeURIComponent(rawValue),
+  //   dataType: 'json',
+  //   data: {
+  //     'projectHref': projectHref,
+  //     'costContainerId': costContainerId
+  //   },
+  //   success: function (res) {
+  //     def.resolve(JSON.parse(res).name);
+  //   },
+  //   error: function (err) {
+  //     def.reject(err);
+  //   }
+  // });
+
+  // return def.promise();
+
+
+
+
 }
 
 
 
 
-function getData(requestUrl, requestData) {
+function getDataAsync(requestUrl, requestData) {
   let def = $.Deferred();
 
   jQuery.ajax({
@@ -737,74 +906,74 @@ function getData(requestUrl, requestData) {
 }
 
 
-async function refreshBudgetDashboard(projectHref, costContainerId, isRefresh = true) {
+// async function refreshBudgetDashboard(projectHref, costContainerId, isRefresh = true) {
 
-  const requestUrl = '/api/forge/cost/info';
-  const requetData = {
-    'projectHref': projectHref,
-    'costContainerId': costContainerId,
-    'isRefresh': isRefresh,
-    'costType': 'budgets'
-  };
+//   const requestUrl = '/api/forge/cost/info';
+//   const requetData = {
+//     'projectHref': projectHref,
+//     'costContainerId': costContainerId,
+//     'isRefresh': isRefresh,
+//     'costType': 'budgets'
+//   };
 
-  return await getData(requestUrl, requetData);
-}
-
-
-async function refreshContractDashboard(projectHref, costContainerId, isRefresh = true) {
-
-  const requestUrl = '/api/forge/cost/info';
-  const requetData = {
-    'projectHref': projectHref,
-    'costContainerId': costContainerId,
-    'isRefresh': isRefresh,
-    'costType': 'contracts'
-  };
-
-  return await getData(requestUrl, requetData);
-}
-
-async function refreshCostItemDashboard(projectHref, costContainerId, isRefresh = true) {
-
-  const requestUrl = '/api/forge/cost/info';
-  const requetData = {
-    'projectHref': projectHref,
-    'costContainerId': costContainerId,
-    'isRefresh': isRefresh,
-    'costType': 'costitems'
-
-  };
-
-  return await getData(requestUrl, requetData);
-}
+//   return await getDataAsync(requestUrl, requetData);
+// }
 
 
-async function refreshChangeOrderDashboard(projectHref, costContainerId, order_Type, isRefresh = true) {
+// async function refreshContractDashboard(projectHref, costContainerId, isRefresh = true) {
 
-  const requestUrl = '/api/forge/cost/info';
-  const requetData = {
-    'projectHref': projectHref,
-    'costContainerId': costContainerId,
-    'orderType': order_Type,
-    'isRefresh': isRefresh,
-    'costType': 'changeorders'
-  };
+//   const requestUrl = '/api/forge/cost/info';
+//   const requetData = {
+//     'projectHref': projectHref,
+//     'costContainerId': costContainerId,
+//     'isRefresh': isRefresh,
+//     'costType': 'contracts'
+//   };
 
-  return await getData(requestUrl, requetData);
-}
+//   return await getDataAsync(requestUrl, requetData);
+// }
+
+// async function refreshCostItemDashboard(projectHref, costContainerId, isRefresh = true) {
+
+//   const requestUrl = '/api/forge/cost/info';
+//   const requetData = {
+//     'projectHref': projectHref,
+//     'costContainerId': costContainerId,
+//     'isRefresh': isRefresh,
+//     'costType': 'costitems'
+
+//   };
+
+//   return await getDataAsync(requestUrl, requetData);
+// }
+
+
+// async function refreshChangeOrderDashboard(projectHref, costContainerId, order_Type, isRefresh = true) {
+
+//   const requestUrl = '/api/forge/cost/info';
+//   const requetData = {
+//     'projectHref': projectHref,
+//     'costContainerId': costContainerId,
+//     'orderType': order_Type,
+//     'isRefresh': isRefresh,
+//     'costType': 'changeorders'
+//   };
+
+//   return await getDataAsync(requestUrl, requetData);
+// }
 
 
 
 
-function exportCSV(csvInfo) {
+// function exportCSV(csvInfo) {
 
-  var csvString = csvInfo.Data.join("%0A");
-  var a = document.createElement('a');
-  a.href = 'data:attachment/csv,' + csvString;
-  a.target = '_blank';
-  a.download = csvInfo.FileName + '.csv';
-  document.body.appendChild(a);
-  a.click();
-}
+//   var csvString = csvInfo.Data.join("%0A");
+//   var a = document.createElement('a');
+//   a.href = 'data:attachment/csv,' + csvString;
+//   a.target = '_blank';
+//   a.download = csvInfo.FileName + '.csv';
+//   document.body.appendChild(a);
+//   a.click();
+// }
 
 

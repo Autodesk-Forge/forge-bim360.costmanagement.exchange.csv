@@ -120,13 +120,15 @@ function prepareUserHubsTree() {
       "plugins": ["types", "state", "sort"],
       "state": { "key": "sourceHubs" }// key restore tree state
   }).bind("activate_node.jstree", function (evt, data) {
-      if (data != null && data.node != null && (data.node.type == 'bim360projects' )) {
-          $('#labelProjectHref').text(data.node.id); 
-          $('#labelCostContainer').text(data.node.original.cost_container); 
+    if (data != null && data.node != null && (data.node.type == 'bim360projects' )) {
+      $('#labelProjectHref').text(data.node.id);
+      $('#labelCostContainer').text(data.node.original.cost_container);
 
-         // activate the refresh button
-         $('#btnRefresh').click();
-      }
+      // create the cost table when project is selected.
+      costTable = new CostTable('#budgetsTable', data.node.original.cost_container, data.node.id, CostDataType.BUDGET);
+      // activate the refresh button
+      $('#btnRefresh').click();
+    }
   });
 }
 

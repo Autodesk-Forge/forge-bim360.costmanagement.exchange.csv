@@ -66,26 +66,24 @@ router.get('/cost/info',jsonParser, async function (req, res) {
   let costUrl = null;
   const costType = req.query.costType;
   switch( costType ){
-    case 'budgets':{
+    case 'budget':{
       costUrl =  config.bim360Cost.URL.BUDGETS_URL.format(containerId);
       break;
     };
-    case 'contracts':{
+    case 'contract':{
       costUrl =  config.bim360Cost.URL.CONTRACTS_URL.format(containerId);
       break;
     }
-    case 'costitems':{
+    case 'costitem':{
       costUrl =  config.bim360Cost.URL.COSTITEMS_URL.format(containerId);
       break;
     }  
-    case 'changeorders':{
-      const orderType = req.query.orderType;
-      if(!orderType){  
-        console.log('change order type is not provided');
-        res.status(400).end('change order type is not provided');
-        return; 
-      }  
-      costUrl =  config.bim360Cost.URL.CHANGEORDERS_URL.format(containerId, orderType);
+    case 'pco':
+    case 'rfq':
+    case 'rco':
+    case 'oco':
+    case 'sco':{
+      costUrl =  config.bim360Cost.URL.CHANGEORDERS_URL.format(containerId, costType);
       break;
     } 
   };
