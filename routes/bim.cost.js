@@ -115,26 +115,24 @@ router.post('/cost/info',jsonParser, async function (req, res) {
 
   let costUrl = null;
   switch( costType ){
-    case '#budget':{
+    case 'budget':{
       costUrl =  config.bim360Cost.URL.BUDGET_URL.format(containerId, requestData.id);
       break;
     };
-    case '#contract':{
+    case 'contract':{
       costUrl =  config.bim360Cost.URL.CONTRACT_URL.format(containerId, requestData.id);
       break;
     }
-    case '#costitem':{
+    case 'costitem':{
       costUrl =  config.bim360Cost.URL.COSTITEM_URL.format(containerId, requestData.id);
       break;
     }  
-    case '#changeorder':{
-      const orderType = req.body.orderType;
-      if(!orderType){  
-        console.log('change order type is not provided');
-        res.status(400).end('change order type is not provided in request body');
-        return; 
-      }  
-      costUrl =  config.bim360Cost.URL.CHANGEORDER_URL.format(containerId, orderType, requestData.id);
+    case 'pco':
+    case 'rfq':
+    case 'rco':
+    case 'oco':
+    case 'sco': {
+      costUrl =  config.bim360Cost.URL.CHANGEORDER_URL.format(containerId, costType, requestData.id);
       break;
     } 
   };
@@ -142,7 +140,7 @@ router.post('/cost/info',jsonParser, async function (req, res) {
     const oauth = new OAuth(req.session);
     const internalToken = await oauth.getInternalToken();
     const costInfoRes = await apiClientCallAsync( 'PATCH',  costUrl, internalToken.access_token, req.body.requestData );
-    res.status(200).end(JSON.stringify(costInfoRes.body.results));
+    res.status(200).end(JSON.stringify(costInfoRes.body));
    }catch( err ){
     console.log('get exception while updating ' + costType + '. Error message is: ' + err.statusMessage )
     res.status(500).end(err.statusMessage);  
@@ -215,9 +213,10 @@ router.get('/bim360/v1/type/:typeId/id/:valueId', jsonParser, async function(req
     if( tokenType === TokenType.TWOLEGGED ){
       const oauth_client = oauth.get2LeggedClient(); 
       const oauth_token = await oauth_client.authenticate();
-      token = oauth_token.access_token
+      token = oauth_token.access_token;
     }else{
-      token = await oauth.getInternalToken();
+      const oauth_token = await oauth.getInternalToken();
+      token = oauth_token.access_token;
     }
     const response = await apiClientCallAsync( 'GET',  requestUrl, token);
     let detailRes = response.body;

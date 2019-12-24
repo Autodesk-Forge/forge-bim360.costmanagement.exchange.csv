@@ -65,4 +65,8 @@ router.get('/oauth/token', async (req, res, next) => {
     }
 });
 
+router.get('/oauth/clientid', (req, res) =>{
+    res.status(200).end( JSON.stringify({id : config.credentials.client_id}) );
+});
+
 module.exports = router;

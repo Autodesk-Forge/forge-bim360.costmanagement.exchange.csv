@@ -12,7 +12,7 @@ body {
   margin-right: 30px;
 }
 
-#userHubs {
+#sourceHubs {
   overflow: auto;
   width: 100%;
   height: calc(100vh - 150px);
@@ -22,19 +22,7 @@ body {
   width: 100%;
 }
 
-#loader_stats {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  z-index: 1;
-  width: 100px;
-  height: 100px;
-  margin: -75px 0 0 -75px;
-  border: 16px solid #f3f3f3;
-  border-radius: 60%;
-  border-top: 16px solid #3498db; 
-  -webkit-animation: spin 2s linear infinite;
-  animation: spin 2s linear infinite;
+.InProgressImg{
+  width: 30%;
+  height: 30%;
 }
-
-

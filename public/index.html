@@ -9,6 +9,7 @@
   <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/jstree/3.3.7/jstree.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.6.0/clipboard.min.js"></script>
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css">
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/jstree/3.3.7/themes/default/style.min.css" />
 
@@ -95,7 +96,7 @@
 
         </div>
         <div class="col-md-8">
-          <ul class="nav nav-tabs">
+          <ul class="nav nav-tabs" id="costTableTabs">
             <li class="active"><a data-toggle="tab" href="#budget"><b>Budgets</b></a>
             </li>
             <li><a data-toggle="tab" href="#contract"><b>Contracts</b></a>
@@ -107,7 +108,13 @@
           </ul>
           <div class="tab-content">
             <div id="budget" class="tab-pane fade in active">
-              <div id="statsView">
+              <div class="clsInProgress" hidden>
+                <div style="text-align: center;">
+                  <img src="res/Bars-1s-200px.svg" class="InProgressImg">
+                </div>
+              </div>
+
+              <div id="statsView" class="clsResult">
                 <div class="row ">
                   <div style="padding-left: 20px; padding-right: 20px; text-align: left;">
                     <table class="table table-striped table-bordered table-hover" id="budgetsTable">
@@ -117,7 +124,13 @@
               </div>
             </div>
             <div id="contract" class="tab-pane fade in">
-              <div id="statsView">
+                <div class="clsInProgress" hidden>
+                    <div style="text-align: center;">
+                        <img src="res/Bars-1s-200px.svg" class="InProgressImg">
+                      </div>
+                  </div>
+    
+              <div id="statsView" class="clsResult">
                 <div class="row ">
                   <div style="padding-left: 20px; padding-right: 20px; text-align: left;">
                     <table class="table table-striped table-bordered table-hover" id="contractsTable">
@@ -127,7 +140,13 @@
               </div>
             </div>
             <div id="costitem" class="tab-pane fade in">
-              <div id="statsView">
+                <div class="clsInProgress" hidden>
+                    <div style="text-align: center;">
+                        <img src="res/Bars-1s-200px.svg" class="InProgressImg">
+                      </div>
+                  </div>
+    
+              <div id="statsView" class="clsResult">
                 <div class="row custom">
                   <div style="padding-left: 20px; padding-right: 20px; text-align: left;">
                     <table class="table table-striped table-bordered table-hover" id="costItemsTable">
@@ -137,7 +156,13 @@
               </div>
             </div>
             <div id="changeorder" class="tab-pane fade in">
-              <div id="statsView">
+                <div class="clsInProgress" hidden>
+                    <div style="text-align: center;">
+                        <img src="res/Bars-1s-200px.svg" class="InProgressImg">
+                      </div>
+                  </div>
+    
+              <div id="statsView" class="clsResult">
                 <div class="row">
                   <div style="padding-top: 10px; text-align: left;">
                     <div class="col-md-2 col-md-offset-1">
@@ -225,7 +250,7 @@
                     </div>
                     <div class="input-group">
                       <span class="input-group-addon">
-                        <input type="radio" name='dataTypeToDisplay' value='beautifulData'>
+                        <input type="radio" name='dataTypeToDisplay' value='humanReadable'>
                       </span>
                       <label class="form-control">Human readable form</label>
                     </div>
@@ -270,6 +295,11 @@
               </div>
               <div class="btn-group btn-lg">
                 <div style="padding-top: 10px;">
+                  <div class="importInProgress" hidden>
+                    <div style="text-align: center;">
+                      <img src="res/Bars-1s-200px.svg" class="InProgressImg">
+                    </div>
+                  </div>
                   <button class="btn btn-primary" id="executeCSV">
                     <span class="glyphicon glyphicon-play"></span>Execute
                   </button>

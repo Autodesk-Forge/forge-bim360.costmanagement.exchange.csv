@@ -68,7 +68,6 @@ $(document).ready(function () {
     $("#provisionAccountSave").click(function () {
       $('#provisionAccountModal').modal('toggle');
       $('#sourceHubs').jstree(true).refresh();
-      $('#destinationHubs').jstree(true).refresh();
     });
   });  
 
