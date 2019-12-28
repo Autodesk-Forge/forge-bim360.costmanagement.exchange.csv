@@ -14,11 +14,14 @@ This repository demonstrates exchange BIM 360 Cost Information between Cost Modu
 
 
 ## Description
-This sample demonstrates how to exchange all the properties of Budget, Contract, Cost item and Change Order between Cost module and .CSV file using BIM 360 Cost API. The sample includes two tasks:
-1. export BIM 360 Cost properties to an CSV file.
-2. Import BIM 360 Cost properties (same as above) from a locally stored CSV file.
+This sample is implemented based on [Learn Forge Tutorial](https://github.com/Autodesk-Forge/learn.forge.viewhubmodels/tree/nodejs), please refer to https://learnforge.autodesk.io/ for the details about the framework.  
+
+This sample demonstrates how to exchange the properties of Budget, Contract, Cost item and Change Order between Cost module and .CSV file using BIM 360 Cost API. The sample includes three tasks:
+1. Display BIM 360 Cost properties either in **Raw data** and **Human reabable form**.
+2. Export BIM 360 Cost properties either in **Raw data** and **Human reabable form** to an CSV file.
+3. Import BIM 360 Cost properties from a locally stored CSV file(based on **Raw data**).
  
-The sample supports to display and export 2 types of data, the raw data with Id, and the human readable data with the name. To import properties, please based on the raw data of CSV file.
+The sample supports to display and export 2 types of data, the raw data with Id, and the human readable data with the name. To import properties, please based on the **raw data** of CSV file.
 
 ## Thumbnail
 
@@ -42,7 +45,7 @@ The sample supports to display and export 2 types of data, the raw data with Id,
 ## Running locally
 Clone this project or download it. It's recommended to install [GitHub desktop](https://desktop.github.com/). To clone it via command line, use the following (**Terminal** on MacOSX/Linux, **Git Shell** on Windows):
 
-    git clone https://github.com/autodesk-forge/bim360-node.js-cost.api
+    git clone https://github.com/autodesk-forge/bim360-nodejs-cost.exchange
 
 **Visual Sutdio Code** (Windows, MacOS):
 
@@ -92,7 +95,8 @@ Blogs:
 - [Field of View](https://fieldofviewblog.wordpress.com/), a BIM focused blog
 
 ### Tips & Tricks
-
+1. Not all the properties could be updated, only these marked as **Editable** are supported.
+2. Some properties including array or complex object are handled specially, including `recipients`. 
 
 ### Troubleshooting
 

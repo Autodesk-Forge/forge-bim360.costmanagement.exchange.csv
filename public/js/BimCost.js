@@ -42,11 +42,16 @@ const CostDataType = {
 
 const NotRelevantProperties = {
   [CostDataType.BUDGET]: [
+    'id',
+    'containerId',
     'mainContractId',
+    'mainContractItemId',
     'mainContract',
-    'properties'
+    'properties',
   ],
   [CostDataType.CONTRACT]: [
+    'id',
+    'containerId',
     'mainContractId',
     'templateId',
     'statusId',
@@ -130,17 +135,25 @@ class CostTable {
 
   // get the required data for cost table
   async fetchDataOfCurrentDataTypeAsync() {
-    const requestUrl = '/api/forge/cost/info';
-    const requetData = {
-      'costContainerId': this.costContainerId,
-      'costType': this.currentDataType
-    };
-    this.dataSet = await getDataClientAsync(requestUrl, requetData);
+    this.dataSet = [];
+    try {
+      const requestUrl = '/api/forge/cost/info';
+      const requetData = {
+        'costContainerId': this.costContainerId,
+        'costType': this.currentDataType
+      };
+      this.dataSet = await getDataClientAsync(requestUrl, requetData);
+    } catch (err) {
+      console.log(err);
+    }
   };
 
 
   // prepare|customize the data to be displayed in the cost table
   async polishDataOfCurrentDataTypeAsync() {
+    if(this.dataSet.length === 0)
+      return;
+
     try {
       this.customizeProperties();
       if (this.humanReadableData) {
@@ -202,12 +215,14 @@ class CostTable {
   // draw the cost table based on the current data
   drawCostTable() {
     let columns = [];
-    for (var key in this.dataSet[0]) {
-      columns.push({
-        field: key,
-        title: key,
-        align: "center"
-      })
+    if (this.dataSet.length !== 0) {
+      for (var key in this.dataSet[0]) {
+        columns.push({
+          field: key,
+          title: key,
+          align: "center"
+        })
+      }
     }
 
     $(this.tableId).bootstrapTable('destroy');
@@ -236,11 +251,11 @@ class CostTable {
 
   // export data in cost table to CSV file
   exportCSV() {
-    var csvString = this.csvData.join("%0A");
-    var a = document.createElement('a');
+    let csvString = this.csvData.join("%0A");
+    let a = document.createElement('a');
     a.href = 'data:attachment/csv,' + csvString;
     a.target = '_blank';
-    a.download = this.currentDataType + '.csv';
+    a.download = this.currentDataType + (new Date()).getTime()+ '.csv';
     document.body.appendChild(a);
     a.click();
   }
@@ -273,7 +288,7 @@ class CostTable {
   customizeProperties = function() {
     for (var key in this.dataSet[0]) {
       if (key === 'adjustments') {
-        this.dataSet.forEach((rowData, index) => {
+        this.dataSet.forEach((rowData) => {
           if (rowData[key] != null) {
             rowData[key] = rowData[key].total;
           }
@@ -281,8 +296,17 @@ class CostTable {
         continue;
       }
 
+      if (key === 'scopeOfWork') {
+        this.dataSet.forEach((rowData) => {
+          if( rowData[key] != null ){
+            rowData[key] = encodeURI(rowData[key] );
+          }
+        })
+        continue;
+      }      
+
       if (Array.isArray(this.dataSet[0][key])) {
-        this.dataSet.forEach((rowData, index) => {
+        this.dataSet.forEach((rowData) => {
           switch (key) {
             case 'recipients':
               let recipientsText = '';
@@ -306,7 +330,7 @@ class CostTable {
                 let propertyValue = rowData[key][i].value;
                 rowData[customPropertyKey] = propertyValue ? propertyValue.replaceAll('\n', ';') : propertyValue;
               }
-              rowData[key] = '';
+              rowData[key] = 'N/A';
               break;
 
             // "budgets" properties when include formInstances in GET Contracts
@@ -346,7 +370,7 @@ class CostTable {
 
 
             default:
-              rowData[key] = "...";
+              rowData[key] = "N/A";
               break;
           };
         })
@@ -558,7 +582,7 @@ class CostTable {
     this.dataSet.forEach((item) => {
       let csvRowTmp = [];
       for (key in item) {
-        csvRowTmp.push(item[key]);
+        csvRowTmp.push( item[key] );
       }
       csvRows.push(csvRowTmp);
     })

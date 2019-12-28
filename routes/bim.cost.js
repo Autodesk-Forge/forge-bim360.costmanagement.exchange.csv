@@ -163,9 +163,16 @@ router.get('/bim360/v1/type/:typeId/id/:valueId', jsonParser, async function(req
   switch (typeId) {
     case 'companyId': {
       const params = req.query.projectHref.split('/');
+      if(params.length < 3){
+        console.log('input project id is not correct.');
+        res.status(400).end('input project is not correct.');
+        return; 
+      }
       const projectId = params[params.length - 1];
       const pureProjectId = projectId.split('b.').join('');
-      requestUrl = config.accountv1.URL.COMPANY_URL.format(pureProjectId);
+      const hubId = params[params.length - 3];
+      const accountId = hubId.split('b.').join('');
+      requestUrl = config.accountv1.URL.COMPANY_URL.format(accountId, pureProjectId);
       tokenType = TokenType.TWOLEGGED;
       break;
     }
@@ -175,7 +182,15 @@ router.get('/bim360/v1/type/:typeId/id/:valueId', jsonParser, async function(req
     case 'signedBy':
     case 'recipients':
     case 'ownerId': {
-      requestUrl = config.accountv1.URL.USER_URL.format(valueId);
+      const params = req.query.projectHref.split('/');
+      if(params.length < 3){
+        console.log('input project id is not correct.');
+        res.status(400).end('input project is not correct.');
+        return; 
+      }
+      const hubId = params[params.length - 3];
+      const accountId = hubId.split('b.').join('');
+      requestUrl = config.accountv1.URL.USER_URL.format(accountId, valueId);
       tokenType = TokenType.TWOLEGGED;
       break;
     }

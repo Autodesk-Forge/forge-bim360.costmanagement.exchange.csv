@@ -36,8 +36,8 @@ module.exports = {
     },
     accountv1:{
         URL:{
-            COMPANY_URL: "https://developer.api.autodesk.com/hq/v1/accounts/"+process.env.BIM360_ACCOUNT_ID+"/projects/{0}/companies",
-            USER_URL: "https://developer.api.autodesk.com/hq/v1/accounts/"+process.env.BIM360_ACCOUNT_ID+"/users/{0}",
+            COMPANY_URL:    "https://developer.api.autodesk.com/hq/v1/accounts/{0}/projects/{1}/companies",
+            USER_URL:       "https://developer.api.autodesk.com/hq/v1/accounts/{0}/users/{1}",
         }
       },
     

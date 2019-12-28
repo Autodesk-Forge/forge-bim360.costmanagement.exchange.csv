@@ -118,7 +118,7 @@ function prepareUserHubsTree() {
       },
       "plugins": ["types", "state", "sort"],
       "state": { "key": "sourceHubs" }// key restore tree state
-  }).bind("activate_node.jstree", function (evt, data) {
+  }).on('select_node.jstree', function(evt, data){
     if (data != null && data.node != null && (data.node.type == 'bim360projects' )) {
       $('#labelProjectHref').text(data.node.id);
       $('#labelCostContainer').text(data.node.original.cost_container);
@@ -128,7 +128,7 @@ function prepareUserHubsTree() {
       // activate the refresh button
       $('#btnRefresh').click();
     }
-  });
+  }); 
 }
 
 function showUser() {
