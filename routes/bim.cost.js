@@ -210,6 +210,7 @@ router.get('/bim360/v1/type/:typeId/id/:valueId', jsonParser, async function(req
     case 'parentId': 
     case 'rootId':
     case 'budgets':
+    case 'budget':
     case 'budgetId':{
       var containerId = req.query.costContainerId;
       if(!containerId){  
@@ -217,7 +218,7 @@ router.get('/bim360/v1/type/:typeId/id/:valueId', jsonParser, async function(req
         res.status(400).end('input parameter is not correct.');
         return; 
       }  
-      requestUrl = config.bim360Cost.URL.BUDGETS_URL.format(containerId, valueId);
+      requestUrl = config.bim360Cost.URL.BUDGET_URL.format(containerId, valueId);
       tokenType = TokenType.THREELEGGED;
       break;
     }

@@ -7,7 +7,7 @@
       "autodesk",
       "forge",
       "bim360",
-      "cost management"
+      "cost"
   ],
   "env": {
       "FORGE_CLIENT_ID": {

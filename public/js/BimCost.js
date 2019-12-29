@@ -25,9 +25,16 @@ if (!String.prototype.replaceAll) {
   };
 }
 
-
+// the cost table instance
 var costTable = null
 
+// the following 2 strings will be used to replace ',' and '\n'
+const Enter_Replacement = '\xfe';
+const Comma_Replacement = '\xfd';
+
+const Editable_String = "(Editable)";
+
+// Data type
 const CostDataType = {
   BUDGET   : 'budget',
   CONTRACT : 'contract',
@@ -40,6 +47,7 @@ const CostDataType = {
   SCO : 'sco'
 }
 
+// columns that would be removed by "Human readable form"
 const NotRelevantProperties = {
   [CostDataType.BUDGET]: [
     'id',
@@ -58,12 +66,16 @@ const NotRelevantProperties = {
     'properties'
   ],
   [CostDataType.COST_ITEM]: [
+    'id',
+    'containerId',
     'mainContractId',
     'budgetStatusId',
     'costStatusId',
     'properties'
   ],
   [CostDataType.CHANGE_ORDER]: [
+    'id',
+    'containerId',
     'mainContractId',
     'markupFormulaId',
     'templateId',
@@ -75,12 +87,12 @@ const NotRelevantProperties = {
 };
 
 
+// ids which could be replaced by the real data
 const IdProperties = {
   [CostDataType.BUDGET]: [
     'parentId',
     'rootId',
     'contractId',
-
     'creatorId',
     'changedBy'
   ],
@@ -89,7 +101,6 @@ const IdProperties = {
     'contactId',
     'recipients',
     'budgets',
-
     'creatorId',
     'ownerId',
     'changedBy',
@@ -98,15 +109,14 @@ const IdProperties = {
   ],
   [CostDataType.COST_ITEM]: [
     'budgetId',
+    'budget',
     'creatorId',
     'changedBy'
   ],
   [CostDataType.CHANGE_ORDER]: [
     'contractId',
-
     'companyId',
     'recipients',
-
     'creatorId',
     'ownerId',
     'changedBy',
@@ -114,7 +124,6 @@ const IdProperties = {
   ]
 };
 
-const EditableString = "(Editable)";
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Cost Table class that manage the operation to the table
@@ -192,10 +201,7 @@ class CostTable {
         this.tableId = '#contractsTable';
         break;
       }
-      case CostDataType.COST_ITEM: {
-        this.tableId = '#costItemsTable';
-        break;
-      }
+      case CostDataType.COST_ITEM:
       case CostDataType.PCO:
       case CostDataType.RFQ:
       case CostDataType.RCO:
@@ -235,8 +241,8 @@ class CostTable {
       showToggle: false,
       showPaginationSwitch: true,
       pagination: true,
-      pageList: [10, 25, 50, 100],
-      pageSize: 15,
+      pageList: [5, 10, 25, 50, 100],
+      pageSize: 5,
       pageNumber: 1,
       uniqueId: 'id',
       striped: true,
@@ -296,14 +302,15 @@ class CostTable {
         continue;
       }
 
-      if (key === 'scopeOfWork') {
+      // property in cost item enitity
+      if (key === 'budget') {
         this.dataSet.forEach((rowData) => {
           if( rowData[key] != null ){
-            rowData[key] = encodeURI(rowData[key] );
+            rowData[key] = rowData[key].id;
           }
         })
         continue;
-      }      
+      }     
 
       if (Array.isArray(this.dataSet[0][key])) {
         this.dataSet.forEach((rowData) => {
@@ -367,8 +374,6 @@ class CostTable {
               }
               rowData[key] = costItemsText;
               break;
-
-
             default:
               rowData[key] = "N/A";
               break;
@@ -387,7 +392,7 @@ class CostTable {
       if (editableProp === TypeSupported.NOT_SUPPORTED ) {
         continue;
       }
-      let newKey = key + EditableString;
+      let newKey = key + Editable_String;
       this.dataSet.forEach((row) => {
         row[newKey] = row[key];
         delete row[key];
@@ -582,7 +587,13 @@ class CostTable {
     this.dataSet.forEach((item) => {
       let csvRowTmp = [];
       for (key in item) {
-        csvRowTmp.push( item[key] );
+        // TBD: special handle scopeOfWork property since it includes a rich text
+        if (key === 'scopeOfWork' && item[key] != null ) {
+          let tmpStr = item[key].replaceAll(',', Comma_Replacement).replaceAll('\n', Enter_Replacement);
+          csvRowTmp.push( tmpStr );
+        }else{
+          csvRowTmp.push( item[key] );
+        }
       }
       csvRows.push(csvRowTmp);
     })
@@ -648,7 +659,7 @@ $(document).ready(function () {
                 for (var j = 0; j < cells.length; j++) {
 
                   // Remove '(Editable)' from the title
-                  const newKey = keys[j].split(EditableString).join('');
+                  const newKey = keys[j].split(Editable_String).join('');
 
                   // always keep 'id' in the request body.
                   if( newKey === 'id'){
@@ -718,10 +729,6 @@ $(document).ready(function () {
       }
       case '#contract':{
         costTable.CurrentDataType = CostDataType.CONTRACT;
-        break;
-      }
-      case '#costitem':{
-        costTable.CurrentDataType = CostDataType.COST_ITEM;
         break;
       }
       case '#changeorder':{
@@ -816,6 +823,14 @@ const TypeSupported = {
 
 // check if the property is supported to be updated
 function isTypeSupported(propertyName, costType='budget' ) {
+
+  if (costType === CostDataType.PCO ||
+    costType === CostDataType.RFQ ||
+    costType === CostDataType.RCO ||
+    costType === CostDataType.OCO ||
+    costType === CostDataType.SCO) {
+    costType = CostDataType.CHANGE_ORDER
+  }
 
   for (var key in SupportedNumberTypes[costType]) {
     if (propertyName === SupportedNumberTypes[costType][key])

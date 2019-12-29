@@ -93,15 +93,8 @@ function prepareUserHubsTree() {
       'types': {
           'default': { 'icon': 'glyphicon glyphicon-question-sign' },
           '#': { 'icon': 'glyphicon glyphicon-user' },
-          'hubs': { 'icon': 'https://github.com/Autodesk-Forge/bim360appstore-data.management-nodejs-transfer.storage/raw/master/www/img/a360hub.png' },
-          'personalHub': { 'icon': 'https://github.com/Autodesk-Forge/bim360appstore-data.management-nodejs-transfer.storage/raw/master/www/img/a360hub.png' },
           'bim360Hubs': { 'icon': 'https://github.com/Autodesk-Forge/bim360appstore-data.management-nodejs-transfer.storage/raw/master/www/img/bim360hub.png' },
           'bim360projects': { 'icon': 'https://github.com/Autodesk-Forge/bim360appstore-data.management-nodejs-transfer.storage/raw/master/www/img/bim360project.png' },
-          'a360projects': { 'icon': 'https://github.com/Autodesk-Forge/bim360appstore-data.management-nodejs-transfer.storage/raw/master/www/img/a360project.png' },
-          'folders': { 'icon': 'glyphicon glyphicon-folder-open' },
-          'items': { 'icon': 'glyphicon glyphicon-file' },
-          'bim360documents': { 'icon': 'glyphicon glyphicon-file' },
-          'versions': { 'icon': 'glyphicon glyphicon-time' },
           'unsupported': { 'icon': 'glyphicon glyphicon-ban-circle' }
       },
       "sort": function (a, b) {
@@ -124,8 +117,11 @@ function prepareUserHubsTree() {
       $('#labelCostContainer').text(data.node.original.cost_container);
 
       // create the cost table when project is selected.
+      if( costTable != null ){
+        delete costTable;
+        costTable = null;
+      }
       costTable = new CostTable('#budgetsTable', data.node.original.cost_container, data.node.id, CostDataType.BUDGET);
-      // activate the refresh button
       $('#btnRefresh').click();
     }
   }); 
