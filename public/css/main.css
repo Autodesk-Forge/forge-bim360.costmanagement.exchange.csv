@@ -18,9 +18,6 @@ body {
   height: calc(100vh - 150px);
 }
 
-#forgeViewer {
-  width: 100%;
-}
 
 .InProgressImg{
   width: 30%;
