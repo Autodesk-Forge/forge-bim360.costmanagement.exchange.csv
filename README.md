@@ -24,11 +24,11 @@ This sample is implemented based on Node.js version of [Learn Forge Tutorial](ht
 ![thumbnail](/thumbnail.png)  
 
 ## Demonstration
-[![https://youtu.be/WX_pssJv5f0](http://img.youtube.com/vi/WX_pssJv5f0/0.jpg)](https://www.youtube.com/watch?v=WX_pssJv5f0 "Exchange data between BIM360 Cost Module and CSV file")
+Watch on [Youtube](https://youtu.be/5NeRK4H-ZrA) to learn more about using this sample to display and exchange BIM 360 cost information.
 
 
 ## Live Demo
-[https://bimcost.herokuapp.com](https://bimcost.herokuapp.com)
+[https://bim360cost-exchange.herokuapp.com/](https://bim360cost-exchange.herokuapp.com/)
 
 
 # Setup
@@ -76,7 +76,11 @@ To deploy this application to Heroku, the **Callback URL** for Forge must use yo
 
 
 ## Known issues
-
+1. The 'scopeOfWork' property contain rich text which may includes '**\n**' and '**,**', but the 2 characters are reserved for special usage while parsing CSV file, to avoid the issue, I use the following 2 characters as replacement for 'scopeOfWork' property.
+```js
+        const Enter_Replacement = '\xfe';
+        const Comma_Replacement = '\xfd';
+```
 
 ## Tips & Tricks
 1. Not all the properties could be updated, only these marked as **Editable** are supported.
