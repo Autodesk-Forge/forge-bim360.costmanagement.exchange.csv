@@ -26,7 +26,7 @@ var bodyParser = require('body-parser');
 var jsonParser = bodyParser.json(); 
 var config = require('../config'); 
 
-const { apiClientCallAsync } = require('./common/bim.cost.imp');
+const { apiClientCallAsync } = require('./common/apiclient');
 const { OAuth } = require('./common/oauth');
 
 
@@ -52,15 +52,27 @@ const TokenType = {
 }
 
 
+///////////////////////////////////////////////////////////////////////
+/// Middleware for obtaining a token for each request.
+///////////////////////////////////////////////////////////////////////
+router.use(async (req, res, next) => {
+  const oauth = new OAuth(req.session);
+  req.oauth_client = oauth.getClient();
+  req.oauth_token = await oauth.getInternalToken();  
+  next();   
+});
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////
 /// get different data of cost type
 /////////////////////////////////////////////////////////////////////////////////////////////
-router.get('/cost/info',jsonParser, async function (req, res) {
+router.get('/cost/info', jsonParser, async function (req, res) {
   const containerId = req.query.costContainerId;
-  if(!containerId){  
-    console.log('cost container id is not provide.');
-    res.status(400).end('cost container id is not provide.');
-    return; 
+  if (!containerId) {
+    console.error('cost container id is not provide.');
+    return (res.status(400).json({
+      diagnostic: 'cost container id is not provide.'
+    }));
   }  
 
   let costUrl = null;
@@ -87,15 +99,16 @@ router.get('/cost/info',jsonParser, async function (req, res) {
       break;
     } 
   };
-   try{
-    const oauth = new OAuth(req.session);
-    const internalToken = await oauth.getInternalToken();
-    const costInfoRes = await apiClientCallAsync( 'GET',  costUrl, internalToken.access_token);
-    res.status(200).end(JSON.stringify(costInfoRes.body.results));
-   }catch( err ){
-    console.log('get exception while getting ' + costType + '. Error message is: ' + err.statusMessage )
-    res.status(500).end(err.statusMessage);  
-   }
+  let costInfoRes = null;
+  try {
+    costInfoRes = await apiClientCallAsync('GET', costUrl, req.oauth_token.access_token);
+  } catch (err) {
+    console.error(err)
+    return (res.status(500).json({
+      diagnostic: 'failed to get the cost info'
+    }));
+  }
+  return (res.status(200).json(costInfoRes.body.results));
 })
 
 
@@ -103,48 +116,50 @@ router.get('/cost/info',jsonParser, async function (req, res) {
 /////////////////////////////////////////////////////////////////////////////////////////////
 /// update cost data
 /////////////////////////////////////////////////////////////////////////////////////////////
-router.post('/cost/info',jsonParser, async function (req, res) {
+router.post('/cost/info', jsonParser, async function (req, res) {
   const containerId = req.body.costContainerId;
   const costType = req.body.costType;
   const requestData = req.body.requestData;
-  if(!containerId || !costType || !requestData || !requestData.id){  
-    console.log('missing parameters in request body');
-    res.status(400).end('missing parameters in request body');
-    return; 
-  }  
+  if (!containerId || !costType || !requestData || !requestData.id) {
+    console.error('missing parameters in request body');
+    return (res.status(400).json({
+      diagnostic: 'missing parameters in request body'
+    }));
+  }
 
   let costUrl = null;
-  switch( costType ){
-    case 'budget':{
-      costUrl =  config.bim360Cost.URL.BUDGET_URL.format(containerId, requestData.id);
+  switch (costType) {
+    case 'budget': {
+      costUrl = config.bim360Cost.URL.BUDGET_URL.format(containerId, requestData.id);
       break;
     };
-    case 'contract':{
-      costUrl =  config.bim360Cost.URL.CONTRACT_URL.format(containerId, requestData.id);
+    case 'contract': {
+      costUrl = config.bim360Cost.URL.CONTRACT_URL.format(containerId, requestData.id);
       break;
     }
-    case 'costitem':{
-      costUrl =  config.bim360Cost.URL.COSTITEM_URL.format(containerId, requestData.id);
+    case 'costitem': {
+      costUrl = config.bim360Cost.URL.COSTITEM_URL.format(containerId, requestData.id);
       break;
-    }  
+    }
     case 'pco':
     case 'rfq':
     case 'rco':
     case 'oco':
     case 'sco': {
-      costUrl =  config.bim360Cost.URL.CHANGEORDER_URL.format(containerId, costType, requestData.id);
+      costUrl = config.bim360Cost.URL.CHANGEORDER_URL.format(containerId, costType, requestData.id);
       break;
-    } 
+    }
   };
-   try{
-    const oauth = new OAuth(req.session);
-    const internalToken = await oauth.getInternalToken();
-    const costInfoRes = await apiClientCallAsync( 'PATCH',  costUrl, internalToken.access_token, req.body.requestData );
-    res.status(200).end(JSON.stringify(costInfoRes.body));
-   }catch( err ){
-    console.log('get exception while updating ' + costType + '. Error message is: ' + err.statusMessage )
-    res.status(500).end(err.statusMessage);  
-   }
+  let costInfoRes = null;
+  try {
+    costInfoRes = await apiClientCallAsync('PATCH', costUrl, req.oauth_token.access_token, req.body.requestData);
+  } catch (err) {
+    console.error(err);
+    return (res.status(500).json({
+      diagnostic: 'failed to update the cost info'
+    }));
+  }
+  return (res.status(200).json(costInfoRes.body));
 })
 
 
@@ -154,19 +169,17 @@ router.post('/cost/info',jsonParser, async function (req, res) {
 router.get('/bim360/v1/type/:typeId/id/:valueId', jsonParser, async function(req, res){
   const typeId = req.params.typeId;
   const valueId = req.params.valueId;
-  // const valueId = req.params.valueId.split(' ').join('');
-
   let requestUrl = null;
-
   let tokenType = TokenType.TWOLEGGED;
 
   switch (typeId) {
     case 'companyId': {
       const params = req.query.projectHref.split('/');
       if(params.length < 3){
-        console.log('input project id is not correct.');
-        res.status(400).end('input project is not correct.');
-        return; 
+        console.error('input project id is not correct.');
+        return (res.status(400).json({
+          diagnostic: 'input project is not correct'
+        }));
       }
       const projectId = params[params.length - 1];
       const pureProjectId = projectId.split('b.').join('');
@@ -184,9 +197,10 @@ router.get('/bim360/v1/type/:typeId/id/:valueId', jsonParser, async function(req
     case 'ownerId': {
       const params = req.query.projectHref.split('/');
       if(params.length < 3){
-        console.log('input project id is not correct.');
-        res.status(400).end('input project is not correct.');
-        return; 
+        console.error('input project id is not correct.');
+        return (res.status(400).json({
+          diagnostic: 'input project is not correct'
+        }));
       }
       const hubId = params[params.length - 3];
       const accountId = hubId.split('b.').join('');
@@ -197,10 +211,11 @@ router.get('/bim360/v1/type/:typeId/id/:valueId', jsonParser, async function(req
 
     case 'contractId': {
       var containerId = req.query.costContainerId;
-      if(!containerId){  
-          console.log('input parameter is not correct.');
-          res.status(400).end('input parameter is not correct.');
-          return; 
+      if (!containerId) {
+        console.error('input container id is not correct.');
+        return (res.status(400).json({
+          diagnostic: 'input container id is not correct'
+        }));
       }
       requestUrl = config.bim360Cost.URL.CONTRACT_URL.format(containerId, valueId);
       tokenType = TokenType.THREELEGGED;
@@ -214,44 +229,47 @@ router.get('/bim360/v1/type/:typeId/id/:valueId', jsonParser, async function(req
     case 'budgetId':{
       var containerId = req.query.costContainerId;
       if(!containerId){  
-        console.log('input parameter is not correct.');
-        res.status(400).end('input parameter is not correct.');
-        return; 
+        console.error('input container id is not correct.');
+        return (res.status(400).json({
+          diagnostic: 'input container id is not correct'
+        }));
       }  
       requestUrl = config.bim360Cost.URL.BUDGET_URL.format(containerId, valueId);
       tokenType = TokenType.THREELEGGED;
       break;
     }
   }
-  try {
+  let token = null;
+  if( tokenType === TokenType.TWOLEGGED ){
     const oauth = new OAuth(req.session);
-    let token = null;
-    if( tokenType === TokenType.TWOLEGGED ){
-      const oauth_client = oauth.get2LeggedClient(); 
-      const oauth_token = await oauth_client.authenticate();
-      token = oauth_token.access_token;
-    }else{
-      const oauth_token = await oauth.getInternalToken();
-      token = oauth_token.access_token;
-    }
-    const response = await apiClientCallAsync( 'GET',  requestUrl, token);
-    let detailRes = response.body;
-    // handle 'companyId' as a special case
-    let companyInfo = {};
-    if(typeId === 'companyId' ){
-      for( let companyItem in detailRes ){
-        if( detailRes[companyItem].member_group_id === valueId ){
-          companyInfo.name = detailRes[companyItem].name;
-          break;
-        }
-      }
-      detailRes = companyInfo;
-    }
-    res.status(200).json(JSON.stringify(detailRes));
-  } catch (err) {
-    console.log("failed to get the data for " + typeId + "." + valueId)
-    res.status(500).end(err.statusMessage);
+    const oauth_client = oauth.get2LeggedClient(); 
+    const oauth_token = await oauth_client.authenticate();
+    token = oauth_token.access_token;
+  }else{
+    token = req.oauth_token.access_token;
   }
+  let response = null;
+  try {
+    response = await apiClientCallAsync( 'GET',  requestUrl, token);
+  } catch (err) {
+    console.error( err );
+    return (res.status(500).json({
+      diagnostic: 'failed to get the real data for the id'
+    }));
+  }
+  let detailRes = response.body;
+  // handle 'companyId' as a special case
+  let companyInfo = {};
+  if(typeId === 'companyId' ){
+    for( let companyItem in detailRes ){
+      if( detailRes[companyItem].member_group_id === valueId ){
+        companyInfo.name = detailRes[companyItem].name;
+        break;
+      }
+    }
+    detailRes = companyInfo;
+  }
+  return (res.status(200).json(detailRes));
 })
 
 
@@ -262,21 +280,23 @@ router.post('/cost/attribute',jsonParser, async function (req, res) {
   const containerId = req.body.costContainerId;
   const requestData = req.body.requestData;
   if(!containerId || !requestData){  
-    console.log('containerId or requestData is not provided.');
-    res.status(400).end('containerId or requestData is not provided in request body.');
-    return; 
+    console.error('containerId or requestData is not provided.');
+    return (res.status(400).json({
+      diagnostic: 'containerId or requestData is not provided in request body'
+    }));
   }  
   const costUrl = config.bim360Cost.URL.CUSTOM_ATTRIBUTE_URL.format(containerId);
 
+  let costInfoRes = null;
   try {
-    const oauth = new OAuth(req.session);
-    const internalToken = await oauth.getInternalToken();
-    const costInfoRes = await apiClientCallAsync('POST', costUrl, internalToken.access_token, requestData);
-    res.status(200).end(JSON.stringify(costInfoRes.body));
+    costInfoRes = await apiClientCallAsync('POST', costUrl, req.oauth_token.access_token, requestData);
   } catch (err) {
-    console.log('get exception while updating, error message is: ' + err.statusMessage)
-    res.status(500).end(err.statusMessage);
+    console.error(err)
+    return (res.status(500).json({
+      diagnostic: 'failed to update custom attribute'
+    }));
   }
+  res.status(200).json(costInfoRes.body);
 })
 
 

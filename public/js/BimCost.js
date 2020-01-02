@@ -505,10 +505,10 @@ class CostTable {
       'costContainerId': this.costContainerId
     };
     try{
-      const res = await getDataClientAsync(requestUrl, requestData);
-      return JSON.parse(res).name;
+      const respBody = await getDataClientAsync(requestUrl, requestData);
+      return respBody.name;
     }catch(err){
-      console.log( err );
+      console.error( err );
       return 'Not Found';
     }
   }
@@ -527,7 +527,7 @@ class CostTable {
       };
       return await postDataClientAsync( requestUrl, requestBody);
     }catch(err){
-      console.log(err);
+      console.error(err);
       return null;
     }
   }
