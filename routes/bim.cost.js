@@ -166,7 +166,7 @@ router.post('/cost/info', jsonParser, async function (req, res) {
 /////////////////////////////////////////////////////////////////////////////////////////////
 /// get read data for the input Id 
 /////////////////////////////////////////////////////////////////////////////////////////////
-router.get('/bim360/v1/type/:typeId/id/:valueId', jsonParser, async function(req, res){
+router.get('/bim360/type/:typeId/id/:valueId', jsonParser, async function(req, res){
   const typeId = req.params.typeId;
   const valueId = req.params.valueId;
   let requestUrl = null;

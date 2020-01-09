@@ -151,7 +151,7 @@ class CostTable {
         'costContainerId': this.costContainerId,
         'costType': this.currentDataType
       };
-      this.dataSet = await getDataClientAsync(requestUrl, requetData);
+      this.dataSet = await apiClientAsync(requestUrl, requetData);
     } catch (err) {
       console.log(err);
     }
@@ -499,13 +499,13 @@ class CostTable {
       console.log('input parameters is not valid.');
       return;
     }
-    const requestUrl = '/api/forge/bim360/v1/type/' + encodeURIComponent(propertyName) + '/id/' + encodeURIComponent(propertyId);
+    const requestUrl = '/api/forge/bim360/type/' + encodeURIComponent(propertyName) + '/id/' + encodeURIComponent(propertyId);
     const requestData = {
       'projectHref': this.projectHref,
       'costContainerId': this.costContainerId
     };
     try{
-      const respBody = await getDataClientAsync(requestUrl, requestData);
+      const respBody = await apiClientAsync(requestUrl, requestData);
       return respBody.name;
     }catch(err){
       console.error( err );
@@ -525,7 +525,7 @@ class CostTable {
         'costType': this.currentDataType,
         'requestData': requestData
       };
-      return await postDataClientAsync( requestUrl, requestBody);
+      return await apiClientAsync( requestUrl, requestBody, 'post');
     }catch(err){
       console.error(err);
       return null;
@@ -567,7 +567,7 @@ class CostTable {
         'value': propertyValue
       }]
     };  
-    return await postDataClientAsync( '/api/forge/cost/attribute', requestBody);
+    return await apiClientAsync( '/api/forge/cost/attribute', requestBody, 'post');
   }
 
 
@@ -850,45 +850,27 @@ function isTypeSupported(propertyName, costType='budget' ) {
 }
 
 
-// helper function for GET Request
-function getDataClientAsync(requestUrl, requestData) {
+// helper function for Request
+function apiClientAsync( requestUrl, requestData=null, requestMethod='get' ) {
   let def = $.Deferred();
+
+  if( requestMethod == 'post' ){
+    requestData = JSON.stringify(requestData);
+  }
 
   jQuery.ajax({
     url: requestUrl,
     contentType: 'application/json',
-    type: 'GET',
+    type: requestMethod,
     dataType: 'json',
     data: requestData,
     success: function (res) {
       def.resolve(res);
     },
     error: function (err) {
-      console.log('get cost info failed:');
+      console.error('request failed:');
       def.reject(err)
     }
   });
   return def.promise();
 }
-
-// helper function for POST Request
-function postDataClientAsync(requestUrl, requestBody) {
-  let def = $.Deferred();
-
-  jQuery.post({
-    url: requestUrl,
-    contentType: 'application/json',
-    dataType: 'json',
-    data: JSON.stringify(requestBody),
-    success: function (res) {
-      def.resolve(res);
-    },
-    error: function (err) {
-      console.log('post request failed:');
-      def.reject(err)
-    }
-  });
-
-  return def.promise();
-}
-
