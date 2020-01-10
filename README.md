@@ -27,56 +27,74 @@ This sample is implemented based on Node.js version of [Learn Forge Tutorial](ht
 Watch on [Youtube](https://youtu.be/5NeRK4H-ZrA) to learn more about using this sample to display and exchange BIM 360 cost information.
 
 
+## Demonstration
+[![https://youtu.be/5NeRK4H-ZrA](http://img.youtube.com/vi/5NeRK4H-ZrA/0.jpg)](https://youtu.be/5NeRK4H-ZrA "Display and exchange BIM 360 cost information with CSV file")
+
+
 ## Live Demo
 [https://bim360cost-exchange.herokuapp.com/](https://bim360cost-exchange.herokuapp.com/)
 
 
-# Setup
+# Web App Setup
+
 ## Prerequisites
+
 1. **Forge Account**: Learn how to create a Forge Account, activate subscription and create an app at [this tutorial](http://learnforge.autodesk.io/#/account/). 
 2. **BIM 360 Account**: must be Account Admin to add the app integration. [Learn about provisioning](https://forge.autodesk.com/blog/bim-360-docs-provisioning-forge-apps). 
 3. **BIM 360 Cost Management**: Create BIM 360 project, activate Cost Management module, setup project to create **Budget Code Template** for Cost Management according to [the guide](https://help.autodesk.com/view/BIM360D/ENU/?guid=BIM360D_Cost_Management_getting_started_with_cost_management_html)
 4. **Node.js**: basic knowledge with [**Node.js**](https://nodejs.org/en/).
-5   . **JavaScript** basic knowledge with **jQuery**
+5. **JavaScript** basic knowledge with **jQuery**
+
+For using this sample, you need an Autodesk developer credentials. Visit the [Forge Developer Portal](https://developer.autodesk.com), sign up for an account, then [create an app](https://developer.autodesk.com/myapps/create). For this new app, use **http://localhost:3000/api/forge/callback/oauth** as Callback URL. Finally take note of the **Client ID** and **Client Secret**.
+
 
 ## Running locally
-Clone this project or download it. It's recommended to install [GitHub desktop](https://desktop.github.com/). To clone it via command line, use the following (**Terminal** on MacOSX/Linux, **Git Shell** on Windows):
 
-    git clone https://github.com/autodesk-forge/forge-bim360.costmanagement.exchange.csv
+Install [NodeJS](https://nodejs.org), version 8 or newer.
 
-**Visual Sutdio Code** (Windows, MacOS):
+Clone this project or download it (this `nodejs` branch only). It's recommended to install [GitHub desktop](https://desktop.github.com/). To clone it via command line, use the following (**Terminal** on MacOSX/Linux, **Git Shell** on Windows):
 
-Open the folder, at the bottom-right, select **Yes** and **Restore**. This restores the packages (e.g. Autodesk.Forge) and creates the launch.json file. 
+    git clone https://github.com/JohnOnSoftware/autodesk-forge/forge-bim360.costmanagement.exchange.csv
 
-At the `.vscode\launch.json`, find the env vars and add your Forge Client ID, Secret and callback URL. 
+Install the required packages using `npm install`.
 
-The end result should be as shown below:
 
-```json
-"env": { 
-    "FORGE_CLIENT_ID": "your id here",
-    "FORGE_CLIENT_SECRET": "your secret here",
-    "FORGE_CALLBACK_URL": "http://localhost:3000/api/forge/callback/oauth"
-},
-```
+**Environment variables**
 
-To run it, install the required packages, set the enviroment variables with your client ID & secret and finally start it. Via command line, navigate to the folder where this repository was cloned and use the following:
+Set the enviroment variables with your client ID & secret and finally start it. Via command line, navigate to the folder where this repository was cloned and use the following:
 
-    npm install 
-    node start.js
+Mac OSX/Linux (Terminal)
 
-Open the browser: [http://localhost:3000](http://localhost:3000). And follow the thumbnail.png to play the features.
+    npm install
+    export FORGE_CLIENT_ID=<<YOUR CLIENT ID FROM DEVELOPER PORTAL>>
+    export FORGE_CLIENT_SECRET=<<YOUR CLIENT SECRET>>
+    export FORGE_CALLBACK_URL=<<YOUR CALLBACK URL>>
 
+    npm start
+
+Windows (use **Node.js command line** from Start menu)
+
+    npm install
+    set FORGE_CLIENT_ID=<<YOUR CLIENT ID FROM DEVELOPER PORTAL>>
+    set FORGE_CLIENT_SECRET=<<YOUR CLIENT SECRET>>
+    set FORGE_CALLBACK_URL=<<YOUR CALLBACK URL>>
+
+    npm start
 
 ## Using the app
-**Setup the app before using the App:**
-- Make sure to [Create BIM360 project, activate Cost Management module, setup project for Cost Management](https://help.autodesk.com/view/BIM360D/ENU/?guid=BIM360D_Cost_Management_getting_started_with_cost_management_html).
 
-**Operate with App after setup**
+Open the browser: [http://localhost:3000](http://localhost:3000). 
+
+**Please watch the [Video](https://youtu.be/5NeRK4H-ZrA) for the detail setup and usage, or follow the steps:**
+
+- **Setup the app before using the App**
+1. Make sure to [Create BIM360 project, activate Cost Management module, setup project for Cost Management](https://help.autodesk.com/view/BIM360D/ENU/?guid=BIM360D_Cost_Management_getting_started_with_cost_management_html).
+
+
+- **Operate with App after setup**
 1. Select a project and display BIM 360 Cost properties either in **Raw data** and **Human reabable form**.
 2. Click **Export** button to export BIM 360 Cost properties either in **Raw data** and **Human reabable form** to a CSV file.
 3. Click **Import** button to update BIM 360 Cost properties from a locally stored CSV file(based on **Raw data**).
-
 
 ## Deployment
 
@@ -95,7 +113,6 @@ To deploy this application to Heroku, the **Callback URL** for Forge must use yo
         const Enter_Replacement = '\xfe';
         const Comma_Replacement = '\xfd';
 ```
-
 ## Tips & Tricks
 1. Not all the properties could be updated, only these marked as **Editable** are supported.
 2. To import properties from CSV file, the suggested way is to export a CSV file of **raw data** first, update the editable properties within the file, then import it back to BIM 360 cost module.
@@ -103,18 +120,18 @@ To deploy this application to Heroku, the **Callback URL** for Forge must use yo
 ## Troubleshooting
 1. **Cannot see my BIM 360 projects**: Make sure to provision the Forge App Client ID within the BIM 360 Account, [learn more here](https://forge.autodesk.com/blog/bim-360-docs-provisioning-forge-apps). This requires the Account Admin permission.
  
-
 ## Further Reading
+**Document**:
 - This sample is based on [Learn Forge Tutorial](https://github.com/Autodesk-Forge/learn.forge.viewhubmodels/tree/nodejs), please check details there about the basic framework if you are not familar. 
 - [Data Management API](https://developer.autodesk.com/en/docs/data/v2/overview/)
 - [BIM 360 API](https://developer.autodesk.com/en/docs/bim360/v1/overview/) and [App Provisioning](https://forge.autodesk.com/blog/bim-360-docs-provisioning-forge-apps)
 - [BIM 360 Cost Management API](wait-to-be-released)
 - [Create BIM360 project, activate Cost Management module, setup project for Cost Management](https://help.autodesk.com/view/BIM360D/ENU/?guid=BIM360D_Cost_Management_getting_started_with_cost_management_html)
 
-Tutorials:
+**Tutorials**:
 - [View BIM 360 Models](http://learnforge.autodesk.io/#/tutorials/viewhubmodels)
 
-Blogs:
+**Blogs**:
 - [Forge Blog](https://forge.autodesk.com/categories/bim-360-api)
 - [Field of View](https://fieldofviewblog.wordpress.com/), a BIM focused blog
 
