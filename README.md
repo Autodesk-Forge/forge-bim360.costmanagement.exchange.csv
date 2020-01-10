@@ -24,10 +24,6 @@ This sample is implemented based on Node.js version of [Learn Forge Tutorial](ht
 ![thumbnail](/thumbnail.png)  
 
 ## Demonstration
-Watch on [Youtube](https://youtu.be/5NeRK4H-ZrA) to learn more about using this sample to display and exchange BIM 360 cost information.
-
-
-## Demonstration
 [![https://youtu.be/X6mFX_yqhTI](http://img.youtube.com/vi/X6mFX_yqhTI/0.jpg)](https://youtu.be/X6mFX_yqhTI "Display and exchange BIM 360 cost information with CSV file")
 
 
