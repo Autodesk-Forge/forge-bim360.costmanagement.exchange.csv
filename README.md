@@ -28,7 +28,7 @@ Watch on [Youtube](https://youtu.be/5NeRK4H-ZrA) to learn more about using this 
 
 
 ## Demonstration
-[![https://youtu.be/5NeRK4H-ZrA](http://img.youtube.com/vi/5NeRK4H-ZrA/0.jpg)](https://youtu.be/5NeRK4H-ZrA "Display and exchange BIM 360 cost information with CSV file")
+[![https://youtu.be/X6mFX_yqhTI](http://img.youtube.com/vi/X6mFX_yqhTI/0.jpg)](https://youtu.be/X6mFX_yqhTI "Display and exchange BIM 360 cost information with CSV file")
 
 
 ## Live Demo
@@ -85,7 +85,7 @@ Windows (use **Node.js command line** from Start menu)
 
 Open the browser: [http://localhost:3000](http://localhost:3000). 
 
-**Please watch the [Video](https://youtu.be/5NeRK4H-ZrA) for the detail setup and usage, or follow the steps:**
+**Please watch the [Video](https://youtu.be/X6mFX_yqhTI) for the detail setup and usage, or follow the steps:**
 
 - **Setup the app before using the App**
 1. Make sure to [Create BIM360 project, activate Cost Management module, setup project for Cost Management](https://help.autodesk.com/view/BIM360D/ENU/?guid=BIM360D_Cost_Management_getting_started_with_cost_management_html).
