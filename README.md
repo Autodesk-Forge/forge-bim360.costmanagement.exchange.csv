@@ -14,8 +14,8 @@
 
 ## Description
 This sample demonstrates exchanging properties of Budget, Contract, Cost item and Change Order between cost module and .CSV file using BIM 360 Cost Management API. It includes 3 main tasks:
-1. Display BIM 360 Cost properties either in **Raw data** and **Human reabable form**.
-2. Export BIM 360 Cost properties either in **Raw data** and **Human reabable form** to a CSV file.
+1. Display BIM 360 Cost properties either in **Raw data** and **Human readable form**.
+2. Export BIM 360 Cost properties either in **Raw data** and **Human readable form** to a CSV file.
 3. Import BIM 360 Cost properties from a locally stored CSV file(based on **Raw data**).
 
 This sample is implemented based on Node.js version of [Learn Forge Tutorial](https://github.com/Autodesk-Forge/learn.forge.viewhubmodels/tree/nodejs), please refer to https://learnforge.autodesk.io/ for the details about the framework.
@@ -50,7 +50,7 @@ Install [NodeJS](https://nodejs.org), version 8 or newer.
 
 Clone this project or download it (this `nodejs` branch only). It's recommended to install [GitHub desktop](https://desktop.github.com/). To clone it via command line, use the following (**Terminal** on MacOSX/Linux, **Git Shell** on Windows):
 
-    git clone https://github.com/JohnOnSoftware/autodesk-forge/forge-bim360.costmanagement.exchange.csv
+    git clone https://github.com/Autodesk-Forge/forge-bim360.costmanagement.exchange.csv
 
 Install the required packages using `npm install`.
 
@@ -88,15 +88,15 @@ Open the browser: [http://localhost:3000](http://localhost:3000).
 
 
 - **Operate with App after setup**
-1. Select a project and display BIM 360 Cost properties either in **Raw data** and **Human reabable form**.
-2. Click **Export** button to export BIM 360 Cost properties either in **Raw data** and **Human reabable form** to a CSV file.
+1. Select a project and display BIM 360 Cost properties either in **Raw data** and **Human readable form**.
+2. Click **Export** button to export BIM 360 Cost properties either in **Raw data** and **Human readable form** to a CSV file.
 3. Click **Import** button to update BIM 360 Cost properties from a locally stored CSV file(based on **Raw data**).
 
 ## Deployment
 
 To deploy this application to Heroku, the **Callback URL** for Forge must use your `.herokuapp.com` address. After clicking on the button below, at the Heroku Create New App page, set your Client ID, Secret and Callback URL for Forge.
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/JohnOnSoftware/forge-bim360.costmanagement.exchange.csv)
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/Autodesk-Forge/forge-bim360.costmanagement.exchange.csv)
 
 
 ## Limitation
